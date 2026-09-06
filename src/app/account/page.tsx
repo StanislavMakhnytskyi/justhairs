@@ -1,0 +1,65 @@
+import Link from "next/link";
+import { isAfter } from "date-fns";
+import { Button } from "@/components/ui/Button";
+import { AppointmentCard } from "@/components/ui/AppointmentCard";
+import { EmptyState, SectionHeader } from "@/components/ui/primitives";
+import { listMyAppointments } from "@/lib/appointments";
+import { getCurrentProfile } from "@/lib/queries";
+
+export default async function DashboardPage() {
+  const [profile, appointments] = await Promise.all([
+    getCurrentProfile(),
+    listMyAppointments(),
+  ]);
+
+  const now = new Date();
+  const upcoming = appointments.filter(
+    (a) =>
+      (a.status === "confirmed" || a.status === "pending") &&
+      isAfter(new Date(a.starts_at), now),
+  );
+  const next = upcoming[0];
+
+  return (
+    <div className="p-6">
+      <h1 className="text-[24px] font-bold tracking-tight text-text-primary">
+        Hi{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+      </h1>
+
+      <div className="mt-6">
+        <SectionHeader
+          title="Next appointment"
+          action={
+            <Link href="/account/appointments" className="text-[13px] font-bold text-link">
+              All
+            </Link>
+          }
+        />
+        {next ? (
+          <AppointmentCard appt={next} />
+        ) : (
+          <EmptyState
+            title="Nothing booked yet"
+            description="Book a haircut, colour or styling session."
+            action={
+              <Button href="/book" size="md">
+                Book appointment
+              </Button>
+            }
+          />
+        )}
+      </div>
+
+      {upcoming.length > 1 && (
+        <div className="mt-8">
+          <SectionHeader title="Later" />
+          <div className="flex flex-col gap-2">
+            {upcoming.slice(1).map((a) => (
+              <AppointmentCard key={a.id} appt={a} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,101 @@
+/* justhairs design tokens — transcribed from the Beauty Booking Design System
+   (tokens/colors.css, typography.css, spacing.css). Kept as CSS custom properties;
+   Tailwind theme maps to these in globals.css. */
+
+:root {
+  /* primary purple ramp */
+  --purple-50: #f2eeff;
+  --purple-100: #e3d9ff;
+  --purple-200: #cbbfff;
+  --purple-300: #a68bff;
+  --purple-400: #7b61ff;
+  --purple-500: #6440fe;
+  --purple-600: #451aff;
+  --purple-700: #3f13fe;
+  --purple-800: #3312cc;
+
+  /* neutrals */
+  --neutral-0: #ffffff;
+  --neutral-25: #fcfcfe;
+  --neutral-50: #f2f2f5;
+  --neutral-100: #edeef1;
+  --neutral-200: #e4e4eb;
+  --neutral-300: #c7c9d9;
+  --neutral-400: #c4c4c4;
+  --neutral-500: #8f90a6;
+  --neutral-600: #898989;
+  --neutral-700: #434343;
+  --neutral-800: #393939;
+  --neutral-900: #1c1c28;
+  --neutral-950: #09101d;
+  --black: #000000;
+  --white: #ffffff;
+
+  /* semantic */
+  --success: #05a660;
+  --error: #e53535;
+  --warning: #cc5f00;
+  --rating: #f8d247;
+  --info-blue: #03a9f4;
+  --accent-peach: #eaa895;
+
+  /* shadows */
+  --shadow-color-1: rgba(96, 97, 112, 0.16);
+  --shadow-color-2: rgba(40, 41, 61, 0.04);
+  --shadow-color-3: rgba(137, 138, 141, 0.24);
+  --shadow-card: 0px 4px 16px 0px var(--shadow-color-1), 0px 1px 2px 0px var(--shadow-color-2);
+  --shadow-overlay: 0px -4px 24px 0px var(--shadow-color-1);
+  --shadow-pressed: 0px 2px 8px 0px var(--shadow-color-3);
+
+  /* spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* semantic aliases — light (default) */
+  --surface-app: var(--neutral-0);
+  --surface-raised: var(--neutral-25);
+  --surface-sunken: var(--neutral-50);
+  --surface-card: var(--neutral-0);
+  --border-default: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-500);
+  --text-tertiary: var(--neutral-600);
+  --text-on-brand: var(--white);
+  --brand: var(--purple-500);
+  --brand-hover: var(--purple-600);
+  --brand-press: var(--purple-700);
+  --brand-subtle: var(--purple-50);
+  --link: var(--purple-500);
+}
+
+[data-theme="dark"] {
+  --surface-app: var(--neutral-900);
+  --surface-raised: #242430;
+  --surface-sunken: #161620;
+  --surface-card: #242430;
+  --border-default: #33333f;
+  --border-strong: #454552;
+  --text-primary: var(--neutral-0);
+  --text-secondary: var(--neutral-300);
+  --text-tertiary: var(--neutral-500);
+  --text-on-brand: var(--white);
+  --brand: var(--purple-400);
+  --brand-hover: var(--purple-300);
+  --brand-press: var(--purple-200);
+  --brand-subtle: #2a2140;
+  --link: var(--purple-400);
+}
