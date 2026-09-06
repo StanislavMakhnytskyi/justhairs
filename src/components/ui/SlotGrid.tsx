@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { formatSlotTime } from "@/lib/format";
 
 export function SlotGrid({
   slots,
@@ -22,11 +23,7 @@ export function SlotGrid({
     <div className="grid grid-cols-3 gap-2">
       {slots.map((iso) => {
         const active = iso === value;
-        const label = new Date(iso).toLocaleTimeString("en-IE", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
+        const label = formatSlotTime(iso);
         return (
           <button
             key={iso}

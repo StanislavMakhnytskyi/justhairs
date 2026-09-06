@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/ui/TopBar";
 import { Divider } from "@/components/ui/primitives";
-import { formatDuration, formatPrice } from "@/lib/format";
+import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { getAppointment } from "@/lib/appointments";
 import { AppointmentActions } from "./AppointmentActions";
 
@@ -12,14 +12,7 @@ export default async function AppointmentDetailPage({
   const appt = await getAppointment(id);
   if (!appt) notFound();
 
-  const when = new Date(appt.starts_at).toLocaleString("en-IE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const when = formatDateTime(appt.starts_at);
   const canManage = appt.status === "confirmed" || appt.status === "pending";
 
   return (

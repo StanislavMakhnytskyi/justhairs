@@ -13,7 +13,7 @@ import { StaffCard } from "@/components/ui/StaffCard";
 import { DateStrip } from "@/components/ui/DateStrip";
 import { SlotGrid } from "@/components/ui/SlotGrid";
 import { Divider } from "@/components/ui/primitives";
-import { formatDuration, formatPrice } from "@/lib/format";
+import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { createBooking, getAvailableSlots } from "@/lib/actions/booking";
 import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
@@ -214,14 +214,7 @@ export function BookingFlow({ services, staff, staffServices, isAuthed }: Props)
             <Divider className="my-3" />
             <Row
               label="When"
-              value={new Date(time).toLocaleString("en-IE", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })}
+              value={formatDateTime(time)}
             />
             <Divider className="my-3" />
             <Row label="Duration" value={formatDuration(service.duration_min)} />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "./primitives";
-import { formatPrice } from "@/lib/format";
+import { formatDateTime, formatPrice } from "@/lib/format";
 import type { AppointmentDetail } from "@/lib/appointments";
 import type { AppointmentStatus } from "@/lib/supabase/types";
 
@@ -13,14 +13,7 @@ const STATUS: Record<AppointmentStatus, { label: string; tone: "success" | "neut
 };
 
 export function AppointmentCard({ appt }: { appt: AppointmentDetail }) {
-  const when = new Date(appt.starts_at).toLocaleString("en-IE", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const when = formatDateTime(appt.starts_at, { weekday: "short", month: "short" });
   const s = STATUS[appt.status];
   return (
     <Link

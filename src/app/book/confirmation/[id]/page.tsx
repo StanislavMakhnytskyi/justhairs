@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/primitives";
-import { formatDuration, formatPrice } from "@/lib/format";
+import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { getAppointment } from "@/lib/appointments";
 
 export default async function ConfirmationPage({
@@ -13,14 +13,7 @@ export default async function ConfirmationPage({
   const appt = await getAppointment(id);
   if (!appt) notFound();
 
-  const when = new Date(appt.starts_at).toLocaleString("en-IE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const when = formatDateTime(appt.starts_at);
 
   return (
     <AppShell className="items-center justify-center px-6 py-12 text-center">
