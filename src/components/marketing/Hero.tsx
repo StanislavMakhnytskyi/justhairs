@@ -1,16 +1,17 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
-import hero from "../../../public/ds/hero.jpg";
+import { HERO_BLUR, HERO_IMAGE } from "@/lib/assets";
 
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden px-6 pb-8 pt-14 text-white">
       <Image
-        src={hero}
+        src={HERO_IMAGE}
         alt=""
         fill
         priority
         placeholder="blur"
+        blurDataURL={HERO_BLUR}
         sizes="480px"
         className="-z-10 object-cover"
       />

@@ -86,11 +86,10 @@ export default async function ServiceDetailPage({
         </div>
       </div>
 
-      <StickyBar>
-        <span className="flex-1 text-[13px] text-text-secondary">
-          {formatPrice(service.price_cents)}
-        </span>
-        <Button href={`/book?service=${service.slug}`}>Book</Button>
+      <StickyBar label="Price" value={formatPrice(service.price_cents)}>
+        <Button href={`/book?service=${service.slug}`} className="shrink-0">
+          Book
+        </Button>
       </StickyBar>
     </AppShell>
   );

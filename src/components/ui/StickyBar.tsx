@@ -1,7 +1,28 @@
-export function StickyBar({ children }: { children: React.ReactNode }) {
+export function StickyBar({
+  children,
+  label,
+  value,
+}: {
+  children: React.ReactNode;
+  /** Optional leading detail, e.g. a price. */
+  label?: string;
+  value?: string;
+}) {
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-auto flex items-center gap-3 border-t border-border-default bg-surface-app px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      {children}
+    <div className="sticky bottom-0 z-20 mt-auto border-t border-border-default bg-surface-app shadow-[var(--shadow-overlay)]">
+      <div className="mx-auto flex min-h-[68px] max-w-[480px] items-center justify-between gap-3 px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {(label || value) && (
+          <div className="min-w-0">
+            {label && (
+              <p className="text-[12px] text-text-secondary">{label}</p>
+            )}
+            {value && (
+              <p className="text-[16px] font-bold text-text-primary">{value}</p>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

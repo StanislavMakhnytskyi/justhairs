@@ -1,9 +1,10 @@
-// Demo data for justhairs — past visits + reviews so the UI shows real content.
+// Demo data for justhairs — past visits + reviews, plus realistic near-term
+// bookings so the time picker shows reserved slots.
 //
 //   node --env-file=.env.local scripts/seed-demo.mjs
 //
-// Idempotent: removes the demo users (and their appointments/reviews via cascade)
-// before recreating them. Uses the service-role key, so it bypasses RLS.
+// Idempotent: removes the demo users (their appointments/reviews cascade) and
+// recreates everything. Uses the service-role key, so it bypasses RLS.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -17,6 +18,10 @@ if (!url || !serviceKey) {
 const supabase = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+
+const SALON_TZ = "Europe/Dublin";
+const OPEN_HOUR = 9;
+const CLOSE_HOUR = 18;
 
 const DEMO = [
   { email: "demo@justhairs.test", name: "Demo Client" },
@@ -37,13 +42,23 @@ const COMMENTS = [
   null,
 ];
 
+const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+/** salon-local wall time (dayStr yyyy-MM-dd, minutes from midnight) -> Date */
+function salonTime(dayStr, minutes) {
+  const hh = String(Math.floor(minutes / 60)).padStart(2, "0");
+  const mm = String(minutes % 60).padStart(2, "0");
+  const guess = new Date(`${dayStr}T${hh}:${mm}:00Z`);
+  const shown = new Date(
+    guess.toLocaleString("sv-SE", { timeZone: SALON_TZ }).replace(" ", "T") + "Z",
+  );
+  return new Date(guess.getTime() + (guess.getTime() - shown.getTime()));
+}
+
 async function findOrCreateUser(email, name) {
-  // list is paginated; the demo set is tiny so page 1 is enough
   const { data: list } = await supabase.auth.admin.listUsers({ perPage: 200 });
   const existing = list?.users.find((u) => u.email === email);
-  if (existing) {
-    await supabase.auth.admin.deleteUser(existing.id);
-  }
+  if (existing) await supabase.auth.admin.deleteUser(existing.id);
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -54,36 +69,47 @@ async function findOrCreateUser(email, name) {
 }
 
 async function main() {
-  const { data: services } = await supabase
-    .from("services")
-    .select("id, slug, price_cents, duration_min");
-  const { data: links } = await supabase
-    .from("staff_services")
-    .select("staff_id, service_id");
+  const [{ data: services }, { data: links }, { data: staff }, { data: hours }] =
+    await Promise.all([
+      supabase.from("services").select("id, slug, price_cents, duration_min"),
+      supabase.from("staff_services").select("staff_id, service_id"),
+      supabase.from("staff").select("id, slug").eq("active", true),
+      supabase.from("staff_working_hours").select("staff_id, weekday"),
+    ]);
   if (!services?.length || !links?.length) {
-    console.error("Run supabase/seed.sql first — no services/staff found.");
+    console.error("Run supabase/seed.sql (or sync-catalog.mjs) first.");
     process.exit(1);
   }
+
   const staffFor = (serviceId) =>
     links.filter((l) => l.service_id === serviceId).map((l) => l.staff_id);
+  const servicesForStaff = (staffId) =>
+    links
+      .filter((l) => l.staff_id === staffId)
+      .map((l) => services.find((s) => s.id === l.service_id))
+      .filter(Boolean);
+  const worksOn = (staffId, weekday) =>
+    hours.some((h) => h.staff_id === staffId && h.weekday === weekday);
 
-  let appts = 0;
-  let reviews = 0;
-
+  // 1. Users
+  const uids = [];
   for (const person of DEMO) {
-    const uid = await findOrCreateUser(person.email, person.name);
-    // profile row is created by the handle_new_user trigger
+    uids.push(await findOrCreateUser(person.email, person.name));
+  }
 
-    const visitCount = 2 + Math.floor(Math.random() * 3); // 2–4 past visits
+  // 2. Past visits + reviews
+  let past = 0;
+  let reviews = 0;
+  for (let p = 0; p < DEMO.length; p++) {
+    const uid = uids[p];
+    const visitCount = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < visitCount; i++) {
-      const service = services[Math.floor(Math.random() * services.length)];
+      const service = rand(services);
       const candidates = staffFor(service.id);
       if (!candidates.length) continue;
-      const staffId = candidates[Math.floor(Math.random() * candidates.length)];
-
-      const daysAgo = 3 + Math.floor(Math.random() * 40);
+      const staffId = rand(candidates);
       const start = new Date();
-      start.setDate(start.getDate() - daysAgo);
+      start.setDate(start.getDate() - (3 + Math.floor(Math.random() * 40)));
       start.setHours(10 + (i % 6), 0, 0, 0);
       const end = new Date(start.getTime() + service.duration_min * 60_000);
 
@@ -101,34 +127,79 @@ async function main() {
         })
         .select("id")
         .single();
-      if (error) {
-        console.warn("appointment insert failed:", error.message);
-        continue;
-      }
-      appts++;
+      if (error) continue;
+      past++;
 
-      // Leave one of the demo account's visits unreviewed so the
-      // "How was your visit?" prompt is always visible when signed in as demo.
-      const leaveUnreviewed = person.email === "demo@justhairs.test" && i === visitCount - 1;
-
+      const leaveUnreviewed =
+        DEMO[p].email === "demo@justhairs.test" && i === visitCount - 1;
       if (!leaveUnreviewed && Math.random() < 0.8) {
-        const rating = Math.random() < 0.75 ? 5 : 4;
-        const comment = COMMENTS[Math.floor(Math.random() * COMMENTS.length)];
         const { error: rErr } = await supabase.from("reviews").insert({
           appointment_id: appt.id,
           customer_id: uid,
           service_id: service.id,
           staff_id: staffId,
-          rating,
-          comment,
+          rating: Math.random() < 0.75 ? 5 : 4,
+          comment: rand(COMMENTS),
         });
         if (!rErr) reviews++;
       }
     }
-    console.log(`  ${person.name}: seeded`);
   }
 
-  console.log(`\nDone — ${appts} past appointments, ${reviews} reviews.`);
+  // 3. Near-term reservations — fill most of today/tomorrow, thin out later.
+  const rows = [];
+  const today = new Date();
+  for (let d = 0; d < 14; d++) {
+    const day = new Date(today);
+    day.setDate(day.getDate() + d);
+    const dayStr = day.toISOString().slice(0, 10);
+    const weekday = day.getDay();
+    const fill = d <= 1 ? 0.75 : d <= 6 ? 0.4 : 0.22;
+
+    for (const s of staff) {
+      if (!worksOn(s.id, weekday)) continue;
+      const menu = servicesForStaff(s.id);
+      if (!menu.length) continue;
+
+      let cursor = OPEN_HOUR * 60;
+      const endOfDay = CLOSE_HOUR * 60;
+      while (cursor < endOfDay) {
+        const service = rand(menu);
+        const fits = cursor + service.duration_min <= endOfDay;
+        const startAt = salonTime(dayStr, cursor);
+        const inFuture = startAt.getTime() > Date.now() + 30 * 60_000;
+
+        if (fits && inFuture && Math.random() < fill) {
+          rows.push({
+            customer_id: rand(uids),
+            service_id: service.id,
+            staff_id: s.id,
+            starts_at: startAt.toISOString(),
+            ends_at: new Date(
+              startAt.getTime() + service.duration_min * 60_000,
+            ).toISOString(),
+            status: "confirmed",
+            price_cents: service.price_cents,
+            created_by: rand(uids),
+          });
+          cursor += Math.ceil(service.duration_min / 30) * 30; // skip consumed slots
+        } else {
+          cursor += 30;
+        }
+      }
+    }
+  }
+
+  let reserved = 0;
+  for (let i = 0; i < rows.length; i += 100) {
+    const { error } = await supabase.from("appointments").insert(rows.slice(i, i + 100));
+    if (error) console.warn("reservation batch failed:", error.message);
+    else reserved += rows.slice(i, i + 100).length;
+  }
+
+  console.log(
+    `Done — ${past} past appointments, ${reviews} reviews, ${reserved} upcoming reservations.`,
+  );
 }
 
 main().catch((e) => {

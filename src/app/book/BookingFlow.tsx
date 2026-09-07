@@ -144,7 +144,9 @@ export function BookingFlow({
 
   const chosenStaffName =
     staffId === "any"
-      ? "Any specialist"
+      ? eligibleStaff.length === 1
+        ? eligibleStaff[0].name
+        : "Any specialist"
       : eligibleStaff.find((s) => s.id === staffId)?.name ?? null;
 
   return (
@@ -186,15 +188,17 @@ export function BookingFlow({
 
         {step === 1 && service && (
           <Stack gap="sm">
-            <StaffCard
-              name="Any specialist"
-              subtitle="First available"
-              selected={staffId === "any"}
-              onClick={() => {
-                setParams({ staff: "any", time: null, step: "date" });
-                if (dateStr) loadSlots(dateStr, "any");
-              }}
-            />
+            {eligibleStaff.length > 1 && (
+              <StaffCard
+                name="Any specialist"
+                subtitle="First available"
+                selected={staffId === "any"}
+                onClick={() => {
+                  setParams({ staff: "any", time: null, step: "date" });
+                  if (dateStr) loadSlots(dateStr, "any");
+                }}
+              />
+            )}
             {eligibleStaff.map((s) => (
               <StaffCard
                 key={s.id}
@@ -259,12 +263,9 @@ export function BookingFlow({
         )}
       </div>
 
-      {step === 3 && (
-        <StickyBar>
-          <span className="flex-1 text-[13px] text-text-secondary">
-            {service ? formatPrice(service.price_cents) : ""}
-          </span>
-          <Button onClick={confirm} disabled={pending}>
+      {step === 3 && service && (
+        <StickyBar label="Total" value={formatPrice(service.price_cents)}>
+          <Button onClick={confirm} disabled={pending} className="shrink-0">
             {isAuthed ? "Confirm booking" : "Sign in to confirm"}
           </Button>
         </StickyBar>
