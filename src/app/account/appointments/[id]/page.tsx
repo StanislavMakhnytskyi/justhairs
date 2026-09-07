@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/ui/TopBar";
-import { Divider } from "@/components/ui/primitives";
+import { Card, Divider } from "@/components/ui/primitives";
+import { StarRating } from "@/components/ui/StarRating";
+import { ReviewPrompt } from "@/components/reviews/ReviewPrompt";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { getAppointment } from "@/lib/appointments";
 import { AppointmentActions } from "./AppointmentActions";
@@ -43,6 +45,22 @@ export default async function AppointmentDetailPage({
             serviceId={appt.service.id}
             currentStaffId={appt.staff?.id ?? null}
           />
+        )}
+
+        {appt.status === "completed" && !appt.review && (
+          <ReviewPrompt appointmentId={appt.id} serviceName={appt.service.name} />
+        )}
+
+        {appt.review && (
+          <Card className="mt-4">
+            <p className="text-[14px] font-bold text-text-primary">Your review</p>
+            <StarRating value={appt.review.rating} className="mt-1" />
+            {appt.review.comment && (
+              <p className="mt-2 text-[14px] text-text-primary">
+                &ldquo;{appt.review.comment}&rdquo;
+              </p>
+            )}
+          </Card>
         )}
       </div>
     </div>

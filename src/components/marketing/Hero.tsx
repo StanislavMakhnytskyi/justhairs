@@ -1,8 +1,20 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import hero from "../../../public/ds/hero.jpg";
 
 export function Hero() {
   return (
-    <section className="bg-gradient-to-b from-purple-400 to-purple-600 px-6 pb-8 pt-14 text-white">
+    <section className="relative isolate overflow-hidden px-6 pb-8 pt-14 text-white">
+      <Image
+        src={hero}
+        alt=""
+        fill
+        priority
+        placeholder="blur"
+        sizes="480px"
+        className="-z-10 object-cover"
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-purple-600/75 to-purple-800/85" />
       <p className="text-[13px] font-bold uppercase tracking-[0.14em] opacity-80">
         justhairs
       </p>

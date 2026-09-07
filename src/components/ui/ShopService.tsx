@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatPrice } from "@/lib/format";
 
@@ -6,6 +7,7 @@ export function ShopService({
   priceCents,
   durationMin,
   description,
+  photoUrl,
   selected,
   action,
   onClick,
@@ -14,6 +16,7 @@ export function ShopService({
   priceCents: number;
   durationMin: number;
   description?: string | null;
+  photoUrl?: string | null;
   selected?: boolean;
   action?: string;
   onClick?: () => void;
@@ -24,9 +27,20 @@ export function ShopService({
       onClick={onClick}
       className={cn(
         "flex w-full items-center gap-3 rounded-[var(--radius-md)] border p-3 text-left transition-colors",
+        onClick &&
+          "focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
         selected ? "border-brand bg-brand-subtle" : "border-border-default bg-surface-card",
       )}
     >
+      {photoUrl && (
+        <Image
+          src={photoUrl}
+          alt=""
+          width={56}
+          height={56}
+          className="h-14 w-14 shrink-0 rounded-[var(--radius-sm)] object-cover"
+        />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-bold text-text-primary">{name}</p>
         {description && (

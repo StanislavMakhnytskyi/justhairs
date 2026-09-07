@@ -60,6 +60,24 @@ export function Badge({
   );
 }
 
+export function RatingBadge({
+  rating,
+  count,
+}: {
+  rating: number;
+  count?: number;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-text-secondary">
+      <span className="text-rating">★</span>
+      {rating.toFixed(1)}
+      {count !== undefined && (
+        <span className="font-normal text-text-tertiary">({count})</span>
+      )}
+    </span>
+  );
+}
+
 export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
   const initials = name
     .split(" ")

@@ -20,7 +20,7 @@ export function SlotGrid({
     );
   }
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div role="group" aria-label="Choose a time" className="grid grid-cols-3 gap-2">
       {slots.map((iso) => {
         const active = iso === value;
         const label = formatSlotTime(iso);
@@ -28,8 +28,9 @@ export function SlotGrid({
           <button
             key={iso}
             onClick={() => onChange(iso)}
+            aria-pressed={active}
             className={cn(
-              "rounded-[var(--radius-sm)] border py-2.5 text-[14px] font-bold transition-colors",
+              "rounded-[var(--radius-sm)] border py-2.5 text-[14px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
               active
                 ? "border-brand bg-brand text-text-on-brand"
                 : "border-border-default bg-surface-card text-text-primary",

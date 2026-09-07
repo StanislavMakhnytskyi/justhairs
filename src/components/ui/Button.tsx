@@ -3,7 +3,7 @@ import Link from "next/link";
 import { tv, type VariantProps } from "tailwind-variants";
 
 export const button = tv({
-  base: "inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] font-bold tracking-tight transition-colors select-none disabled:pointer-events-none disabled:bg-surface-sunken disabled:text-text-tertiary",
+  base: "inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] font-bold tracking-tight transition-colors select-none focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 disabled:pointer-events-none disabled:bg-surface-sunken disabled:text-text-tertiary",
   variants: {
     variant: {
       primary: "bg-brand text-text-on-brand hover:bg-brand-hover active:bg-brand-press",

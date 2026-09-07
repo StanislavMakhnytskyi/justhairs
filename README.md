@@ -3,13 +3,15 @@
 A mobile-first booking product for a unisex hair salon — built as a small booking SaaS,
 not a brochure site. Next.js (App Router) + React 19 + Tailwind v4 + Supabase + Stripe.
 
-**Milestone 1 (this build):** the client booking flow.
+**Milestone 1 + polish (this build):** the client booking flow.
 Home → Services → 4-step booking (service → specialist → date → time) → auth gate →
 review → confirm (pay-later) → confirmation → client dashboard with appointments,
-reschedule / cancel, and profile.
+reschedule / cancel, and profile. Plus: service photography, a post-visit review loop
+(prompt → submit → ratings on Home / team / service pages), loading & error states,
+dark mode, and page metadata.
 
-Orders, payments UI, reviews, favorites, notifications delivery and the admin panel are
-scoped for later milestones. Their tables exist in the schema; the routes show a
+Orders, payments UI, favorites, notifications delivery and the admin panel are scoped
+for later milestones. Their tables exist in the schema; the routes show a
 "coming soon" state.
 
 ## Stack
@@ -40,10 +42,15 @@ scoped for later milestones. Their tables exist in the schema; the routes show a
 3. **Apply the schema and seed.** In the Supabase SQL editor, run in order:
 
    - `supabase/migrations/0001_init.sql`
+   - `supabase/migrations/0002_reviews_and_cron.sql`
    - `supabase/seed.sql`
 
    (Or, with the Supabase CLI linked: `supabase db push` then
    `psql "$DATABASE_URL" -f supabase/seed.sql`.)
+
+   `0002` schedules an hourly `pg_cron` job to mark finished appointments
+   `completed`. If `create extension pg_cron` errors, enable **pg_cron** first
+   under Database → Extensions, then re-run `0002`.
 
 4. **Auth providers** (Supabase → Authentication → Providers):
 
@@ -55,7 +62,22 @@ scoped for later milestones. Their tables exist in the schema; the routes show a
      provider (Twilio/MessageBird) in Supabase. The sign-in screen shows a
      "not configured" notice until then; the OTP UI and wiring are already in place.
 
-5. **Regenerate DB types** (optional but recommended once the schema is live):
+5. **Demo data** (optional — past visits + reviews so the UI has real content):
+
+   ```bash
+   node --env-file=.env.local scripts/seed-demo.mjs
+   ```
+
+   Creates a handful of demo customers (`demo@justhairs.test` and friends) with
+   completed appointments and reviews. Idempotent — safe to re-run. Sign in as
+   `demo@justhairs.test` via the email magic link to see the dashboard populated.
+
+6. **Google Maps** (optional): set `NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY` to a
+   [Maps Embed API](https://developers.google.com/maps/documentation/embed/get-api-key)
+   key to show a map on the Home page. Without it, the address falls back to an
+   "Open in Google Maps" link.
+
+7. **Regenerate DB types** (optional but recommended once the schema is live):
 
    ```bash
    npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.gen.ts
@@ -63,7 +85,7 @@ scoped for later milestones. Their tables exist in the schema; the routes show a
 
    The app currently uses hand-authored domain types in `src/lib/supabase/types.ts`.
 
-6. **Run**
+8. **Run**
 
    ```bash
    npm run dev
@@ -116,7 +138,9 @@ src/
     format.ts, cn.ts             Helpers
 supabase/
   migrations/0001_init.sql       Schema, RLS, booking-engine RPCs
+  migrations/0002_reviews_and_cron.sql  Review guard, rating views, pg_cron
   seed.sql                       Demo salon, services, staff, hours
+scripts/seed-demo.mjs            Optional: demo customers, past visits, reviews
 ```
 
 ## Booking engine

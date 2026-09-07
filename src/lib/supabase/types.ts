@@ -77,6 +77,22 @@ export interface AvailableSlot {
   staff_id: string;
 }
 
+export interface Review {
+  id: string;
+  appointment_id: string;
+  customer_id: string;
+  staff_id: string | null;
+  service_id: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface Rating {
+  rating: number;
+  review_count: number;
+}
+
 type Row<T> = { Row: T; Insert: Partial<T>; Update: Partial<T>; Relationships: [] };
 
 export interface Database {

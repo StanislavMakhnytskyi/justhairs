@@ -9,10 +9,24 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "700"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "justhairs — book your look",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "justhairs — book your look",
+    template: "%s",
+  },
   description:
     "Book haircuts, colour and styling for men and women. Pick a service, a stylist, a time — done.",
+  applicationName: "justhairs",
+  openGraph: {
+    siteName: "justhairs",
+    type: "website",
+    title: "justhairs — book your look",
+    description:
+      "Book haircuts, colour and styling for men and women. Pick a service, a stylist, a time — done.",
+  },
 };
 
 export default function RootLayout({

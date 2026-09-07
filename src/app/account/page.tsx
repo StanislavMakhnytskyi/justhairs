@@ -3,6 +3,7 @@ import { isAfter } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { AppointmentCard } from "@/components/ui/AppointmentCard";
 import { EmptyState, SectionHeader } from "@/components/ui/primitives";
+import { ReviewPrompt } from "@/components/reviews/ReviewPrompt";
 import { listMyAppointments } from "@/lib/appointments";
 import { getCurrentProfile } from "@/lib/queries";
 
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
       isAfter(new Date(a.starts_at), now),
   );
   const next = upcoming[0];
+  const toReview = appointments.filter((a) => a.status === "completed" && !a.review);
 
   return (
     <div className="p-6">
@@ -49,6 +51,16 @@ export default async function DashboardPage() {
           />
         )}
       </div>
+
+      {toReview.length > 0 && (
+        <div className="mt-8">
+          <SectionHeader title="Rate your last visit" />
+          <ReviewPrompt
+            appointmentId={toReview[0].id}
+            serviceName={toReview[0].service.name}
+          />
+        </div>
+      )}
 
       {upcoming.length > 1 && (
         <div className="mt-8">

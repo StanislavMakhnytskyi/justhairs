@@ -140,6 +140,7 @@ export function BookingFlow({ services, staff, staffServices, isAuthed }: Props)
                 priceCents={s.price_cents}
                 durationMin={s.duration_min}
                 description={s.description}
+                photoUrl={s.photo_url}
                 selected={s.slug === serviceSlug}
                 action={s.slug === serviceSlug ? "Selected" : "Select"}
                 onClick={() =>

@@ -28,6 +28,11 @@ export function AppointmentCard({ appt }: { appt: AppointmentDetail }) {
       <p className="text-[13px] text-text-secondary">
         {appt.staff?.name ?? "Any specialist"} · {formatPrice(appt.price_cents)}
       </p>
+      {appt.review && (
+        <p className="mt-1 text-[13px] text-text-secondary">
+          You rated <span className="text-rating">{"★".repeat(appt.review.rating)}</span>
+        </p>
+      )}
     </Link>
   );
 }

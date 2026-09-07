@@ -22,8 +22,9 @@ export function BottomNav() {
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium",
+              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2",
               active ? "text-brand" : "text-text-tertiary",
             )}
           >

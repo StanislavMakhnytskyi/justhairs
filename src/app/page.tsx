@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Hero } from "@/components/marketing/Hero";
+import { Map } from "@/components/marketing/Map";
 import { Button } from "@/components/ui/Button";
-import { Divider, SectionHeader } from "@/components/ui/primitives";
+import { Divider, RatingBadge, SectionHeader } from "@/components/ui/primitives";
 import { ShopService } from "@/components/ui/ShopService";
 import { StaffCard } from "@/components/ui/StaffCard";
+import { StarRating } from "@/components/ui/StarRating";
 import { getCatalog } from "@/lib/queries";
+import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
 export default async function HomePage() {
-  const { services, staff } = await getCatalog();
+  const [{ services, staff }, reviews, overall, staffRatings] = await Promise.all([
+    getCatalog(),
+    getLatestReviews(3),
+    getOverallRating(),
+    getRatingsMap("staff_ratings"),
+  ]);
+
   const men = services.filter((s) => s.category.gender === "men");
   const women = services.filter((s) => s.category.gender === "women");
   const popular = services.filter((s) => s.popular);
@@ -36,30 +45,60 @@ export default async function HomePage() {
         />
         <div className="flex flex-col gap-2">
           {staff.map((s) => (
-            <StaffCard key={s.id} name={s.name} subtitle={s.title} />
+            <StaffCard
+              key={s.id}
+              name={s.name}
+              subtitle={s.title}
+              rating={staffRatings[s.id]}
+            />
           ))}
         </div>
       </section>
 
       <section className="px-6 py-6">
-        <SectionHeader title="Reviews" />
-        <div className="rounded-[var(--radius-md)] bg-surface-sunken p-4">
-          <p className="text-[15px] font-bold text-rating">★★★★★</p>
-          <p className="mt-1 text-[14px] text-text-primary">
-            &ldquo;In and out in 40 minutes with the best fade I&rsquo;ve had. Booking
-            took seconds.&rdquo;
+        <SectionHeader
+          title="Reviews"
+          action={
+            overall ? (
+              <RatingBadge rating={overall.rating} count={overall.review_count} />
+            ) : undefined
+          }
+        />
+        {reviews.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {reviews.map((r) => (
+              <div
+                key={r.id}
+                className="rounded-[var(--radius-md)] bg-surface-sunken p-4"
+              >
+                <StarRating value={r.rating} size={16} />
+                {r.comment && (
+                  <p className="mt-2 text-[14px] text-text-primary">
+                    &ldquo;{r.comment}&rdquo;
+                  </p>
+                )}
+                <p className="mt-2 text-[13px] text-text-secondary">
+                  — {r.reviewer}
+                  {r.service_name ? ` · ${r.service_name}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-[var(--radius-md)] bg-surface-sunken p-4 text-[14px] text-text-secondary">
+            No reviews yet — be the first after your visit.
           </p>
-          <p className="mt-2 text-[13px] text-text-secondary">— Jordan R.</p>
-        </div>
+        )}
       </section>
 
       <section className="px-6 py-6">
         <SectionHeader title="Visit us" />
-        <div className="space-y-1 text-[14px] text-text-primary">
+        <div className="mb-3 space-y-1 text-[14px] text-text-primary">
           <p>14 Parnell Street, Dublin 1</p>
           <p className="text-text-secondary">Tue–Sat · 9:00–18:00</p>
           <p className="text-text-secondary">Closed Sunday &amp; Monday</p>
         </div>
+        <Map />
         <a
           href="https://instagram.com"
           target="_blank"
@@ -108,6 +147,7 @@ function ServiceSection({
               priceCents={s.price_cents}
               durationMin={s.duration_min}
               description={s.description}
+              photoUrl={s.photo_url}
               action="Book"
             />
           </Link>

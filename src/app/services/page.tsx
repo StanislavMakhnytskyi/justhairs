@@ -41,6 +41,7 @@ export default async function ServicesPage({
               priceCents={s.price_cents}
               durationMin={s.duration_min}
               description={s.description}
+              photoUrl={s.photo_url}
               action="Book"
             />
           </Link>

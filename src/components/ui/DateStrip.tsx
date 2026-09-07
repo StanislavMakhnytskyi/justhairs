@@ -16,15 +16,20 @@ export function DateStrip({
 }) {
   const list = Array.from({ length: days }, (_, i) => addDays(from, i));
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+    <div
+      role="group"
+      aria-label="Choose a date"
+      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]"
+    >
       {list.map((d) => {
         const active = value && isSameDay(d, value);
         return (
           <button
             key={d.toISOString()}
             onClick={() => onChange(d)}
+            aria-pressed={!!active}
             className={cn(
-              "flex w-14 shrink-0 flex-col items-center gap-1 rounded-[var(--radius-md)] border py-2.5 transition-colors",
+              "flex w-14 shrink-0 flex-col items-center gap-1 rounded-[var(--radius-md)] border py-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
               active
                 ? "border-brand bg-brand text-text-on-brand"
                 : "border-border-default bg-surface-card text-text-primary",

@@ -22,7 +22,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ref={ref}
           id={fieldId}
           className={cn(
-            "h-12 rounded-[var(--radius-sm)] border bg-surface-card px-4 text-[15px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-brand",
+            "h-12 rounded-[var(--radius-sm)] border bg-surface-card px-4 text-[15px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
             error ? "border-error" : "border-border-strong",
             className,
           )}
