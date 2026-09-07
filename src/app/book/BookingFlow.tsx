@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { AppShell } from "@/components/layout/AppShell";
@@ -16,7 +23,7 @@ import { StaffCard } from "@/components/ui/StaffCard";
 import { DateStrip } from "@/components/ui/DateStrip";
 import { SlotGrid } from "@/components/ui/SlotGrid";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
-import { dayTimeGrid } from "@/lib/salon";
+import { dayTimeGrid, nextOpenDates } from "@/lib/salon";
 import { createBooking, getAvailableSlots } from "@/lib/actions/booking";
 import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
@@ -98,21 +105,44 @@ export function BookingFlow({
     [params, pathname, router],
   );
 
+  // Client-side cache of slot lookups, keyed by staff+day, so re-visiting a
+  // date (or a date we prefetched) is instant.
+  const slotCache = useRef(new Map<string, string[]>());
+  const cacheKey = (sid: string | null, day: string) => `${sid ?? "any"}:${day}`;
+
+  const fetchSlots = useCallback(
+    async (day: string, sid: string | null): Promise<string[]> => {
+      if (!service) return [];
+      const key = cacheKey(sid, day);
+      const hit = slotCache.current.get(key);
+      if (hit) return hit;
+      const result = await getAvailableSlots({
+        serviceId: service.id,
+        staffId: sid === "any" || !sid ? null : sid,
+        day,
+      });
+      slotCache.current.set(key, result);
+      return result;
+    },
+    [service],
+  );
+
   const loadSlots = useCallback(
     (day: string, sid: string | null) => {
       if (!service) return;
+      const cached = slotCache.current.get(cacheKey(sid, day));
+      if (cached) {
+        setSlots(cached);
+        setLoadingSlots(false);
+        return;
+      }
       startTransition(async () => {
         setLoadingSlots(true);
-        const result = await getAvailableSlots({
-          serviceId: service.id,
-          staffId: sid === "any" || !sid ? null : sid,
-          day,
-        });
-        setSlots(result);
+        setSlots(await fetchSlots(day, sid));
         setLoadingSlots(false);
       });
     },
-    [service],
+    [service, fetchSlots],
   );
 
   // Load slots when arriving with a date already in the URL (deep link / back-nav).
@@ -120,6 +150,22 @@ export function BookingFlow({
   useEffect(() => {
     if (needsSlots) loadSlots(dateStr!, staffId);
   }, [needsSlots, dateStr, staffId, loadSlots]);
+
+  // Warm the cache: as soon as we know the service (and staff, if picked),
+  // fetch slots for the next few open days in the background so the calendar
+  // and time grid have no perceptible lag.
+  useEffect(() => {
+    if (!service || step < 1) return;
+    const sid = staffId ?? "any";
+    for (const day of nextOpenDates(openWeekdays, 5)) {
+      void fetchSlots(day, sid);
+    }
+  }, [service, staffId, step, openWeekdays, fetchSlots]);
+
+  // Warm the confirmation route while the user is on the review step.
+  useEffect(() => {
+    if (step === 3) router.prefetch("/book/confirmation/pending");
+  }, [step, router]);
 
   // If the sign-in round-trip dropped the query string, restore the booking the
   // user was about to confirm from sessionStorage.

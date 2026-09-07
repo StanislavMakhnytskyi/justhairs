@@ -1,5 +1,4 @@
 import { Section } from "@/components/ui/Section";
-import { TextLink } from "@/components/ui/TextLink";
 import { Map } from "./Map";
 import { SALON } from "@/lib/salon";
 
@@ -12,11 +11,6 @@ export function VisitUs({ hours }: { hours?: string }) {
         <p className="text-text-secondary">Closed Sunday &amp; Monday</p>
       </address>
       <Map />
-      <p className="mt-3">
-        <TextLink href={SALON.instagram} external>
-          {SALON.instagramHandle} on Instagram
-        </TextLink>
-      </p>
     </Section>
   );
 }

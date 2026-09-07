@@ -16,6 +16,7 @@ export const SALON = {
   lat: 53.35216,
   lon: -6.26109,
   instagram: "https://instagram.com",
+  facebook: "https://facebook.com",
   instagramHandle: "@justhairs",
 };
 
@@ -41,6 +42,23 @@ export function dayTimeGrid(dayStr: string): number[] {
       const mm = String(m).padStart(2, "0");
       out.push(salonLocalToDate(dayStr, `${hh}:${mm}`).getTime());
     }
+  }
+  return out;
+}
+
+/** The next `count` dates (yyyy-MM-dd) the salon is open, starting today. */
+export function nextOpenDates(openWeekdays: number[], count: number): string[] {
+  const out: string[] = [];
+  const d = new Date();
+  for (let i = 0; i < 30 && out.length < count; i++) {
+    if (openWeekdays.includes(d.getDay())) {
+      out.push(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate(),
+        ).padStart(2, "0")}`,
+      );
+    }
+    d.setDate(d.getDate() + 1);
   }
   return out;
 }
