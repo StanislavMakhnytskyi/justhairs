@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Rating } from "@/lib/supabase/types";
 
 export type LatestReview = {
@@ -12,6 +12,7 @@ export type LatestReview = {
 };
 
 export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
+  if (!isSupabaseConfigured) return [];
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -35,6 +36,7 @@ export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
 }
 
 export async function getOverallRating(): Promise<Rating | null> {
+  if (!isSupabaseConfigured) return null;
   try {
     const supabase = await createClient();
     const { data } = await supabase.from("reviews").select("rating");
@@ -52,6 +54,7 @@ export async function getOverallRating(): Promise<Rating | null> {
 export async function getRatingsMap(
   view: "service_ratings" | "staff_ratings",
 ): Promise<Record<string, Rating>> {
+  if (!isSupabaseConfigured) return {};
   try {
     const supabase = await createClient();
     const { data } = await supabase.from(view).select("*");
@@ -71,6 +74,7 @@ export async function getRatingsMap(
 }
 
 export async function hasReviewed(appointmentId: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
   try {
     const supabase = await createClient();
     const { count } = await supabase

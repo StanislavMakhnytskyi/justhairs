@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/ui/TopBar";
 import { Avatar, RatingBadge } from "@/components/ui/primitives";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getRatingsMap } from "@/lib/reviews";
 import type { Staff } from "@/lib/supabase/types";
 
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export default async function MastersPage() {
   let staff: Staff[] = [];
   try {
+    if (!isSupabaseConfigured) throw new Error("not configured");
     const supabase = await createClient();
     const { data } = await supabase
       .from("staff")

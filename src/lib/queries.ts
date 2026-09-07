@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
 
 export type ServiceWithCategory = Service & { category: ServiceCategory };
@@ -11,6 +11,7 @@ const EMPTY_CATALOG = {
 };
 
 export async function getCatalog() {
+  if (!isSupabaseConfigured) return EMPTY_CATALOG;
   try {
     const supabase = await createClient();
     const [{ data: categories }, { data: services }, { data: staff }, { data: links }] =
@@ -36,6 +37,7 @@ export async function getCatalog() {
 }
 
 export async function getServiceBySlug(slug: string) {
+  if (!isSupabaseConfigured) return null;
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -51,6 +53,7 @@ export async function getServiceBySlug(slug: string) {
 }
 
 export async function getStaffForService(serviceId: string) {
+  if (!isSupabaseConfigured) return [];
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -66,6 +69,7 @@ export async function getStaffForService(serviceId: string) {
 }
 
 export async function getCurrentProfile() {
+  if (!isSupabaseConfigured) return null;
   try {
     const supabase = await createClient();
     const {

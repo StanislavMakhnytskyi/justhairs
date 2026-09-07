@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Appointment, Review, Service, Staff } from "@/lib/supabase/types";
 
 export type AppointmentDetail = Appointment & {
@@ -19,6 +19,7 @@ function normalize(row: Record<string, unknown>): AppointmentDetail {
 }
 
 export async function getAppointment(id: string) {
+  if (!isSupabaseConfigured) return null;
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -33,6 +34,7 @@ export async function getAppointment(id: string) {
 }
 
 export async function listMyAppointments() {
+  if (!isSupabaseConfigured) return [];
   try {
     const supabase = await createClient();
     const { data } = await supabase
