@@ -1,12 +1,14 @@
-import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Hero } from "@/components/marketing/Hero";
-import { Map } from "@/components/marketing/Map";
+import { VisitUs } from "@/components/marketing/VisitUs";
 import { Button } from "@/components/ui/Button";
-import { Divider, RatingBadge, SectionHeader } from "@/components/ui/primitives";
+import { Section, Stack } from "@/components/ui/Section";
+import { Divider, RatingBadge } from "@/components/ui/primitives";
+import { TextLink } from "@/components/ui/TextLink";
 import { ShopService } from "@/components/ui/ShopService";
 import { StaffCard } from "@/components/ui/StaffCard";
-import { StarRating } from "@/components/ui/StarRating";
+import { ReviewCard } from "@/components/ui/ReviewCard";
+import { Hint } from "@/components/ui/Hint";
 import { getCatalog } from "@/lib/queries";
 import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
@@ -34,87 +36,57 @@ export default async function HomePage() {
       />
       <ServiceSection title="Popular" href="/services" items={popular} />
 
-      <section className="px-6 py-6">
-        <SectionHeader
-          title="Our team"
-          action={
-            <Link href="/masters" className="text-[13px] font-bold text-link">
-              See all
-            </Link>
-          }
-        />
-        <div className="flex flex-col gap-2">
+      <Section
+        title="Our team"
+        action={<TextLink href="/masters">See all</TextLink>}
+      >
+        <Stack gap="sm">
           {staff.map((s) => (
             <StaffCard
               key={s.id}
+              href="/masters"
               name={s.name}
               subtitle={s.title}
+              photoUrl={s.photo_url}
               rating={staffRatings[s.id]}
             />
           ))}
-        </div>
-      </section>
+        </Stack>
+      </Section>
 
-      <section className="px-6 py-6">
-        <SectionHeader
-          title="Reviews"
-          action={
-            overall ? (
-              <RatingBadge rating={overall.rating} count={overall.review_count} />
-            ) : undefined
-          }
-        />
+      <Section
+        title="Reviews"
+        action={
+          overall ? (
+            <RatingBadge rating={overall.rating} count={overall.review_count} />
+          ) : undefined
+        }
+      >
         {reviews.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <Stack>
             {reviews.map((r) => (
-              <div
+              <ReviewCard
                 key={r.id}
-                className="rounded-[var(--radius-md)] bg-surface-sunken p-4"
-              >
-                <StarRating value={r.rating} size={16} />
-                {r.comment && (
-                  <p className="mt-2 text-[14px] text-text-primary">
-                    &ldquo;{r.comment}&rdquo;
-                  </p>
-                )}
-                <p className="mt-2 text-[13px] text-text-secondary">
-                  — {r.reviewer}
-                  {r.service_name ? ` · ${r.service_name}` : ""}
-                </p>
-              </div>
+                rating={r.rating}
+                comment={r.comment}
+                reviewer={r.reviewer}
+                context={r.service_name}
+              />
             ))}
-          </div>
+          </Stack>
         ) : (
-          <p className="rounded-[var(--radius-md)] bg-surface-sunken p-4 text-[14px] text-text-secondary">
-            No reviews yet — be the first after your visit.
-          </p>
+          <Hint>No reviews yet — be the first after your visit.</Hint>
         )}
-      </section>
+      </Section>
 
-      <section className="px-6 py-6">
-        <SectionHeader title="Visit us" />
-        <div className="mb-3 space-y-1 text-[14px] text-text-primary">
-          <p>14 Parnell Street, Dublin 1</p>
-          <p className="text-text-secondary">Tue–Sat · 9:00–18:00</p>
-          <p className="text-text-secondary">Closed Sunday &amp; Monday</p>
-        </div>
-        <Map />
-        <a
-          href="https://instagram.com"
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-block text-[13px] font-bold text-link"
-        >
-          @justhairs on Instagram
-        </a>
-      </section>
+      <VisitUs />
 
       <Divider />
-      <section className="px-6 py-8">
+      <Section>
         <Button href="/book" block>
           Book now
         </Button>
-      </section>
+      </Section>
     </AppShell>
   );
 }
@@ -130,29 +102,21 @@ function ServiceSection({
 }) {
   if (items.length === 0) return null;
   return (
-    <section className="px-6 py-6">
-      <SectionHeader
-        title={title}
-        action={
-          <Link href={href} className="text-[13px] font-bold text-link">
-            See all
-          </Link>
-        }
-      />
-      <div className="flex flex-col gap-2">
+    <Section title={title} action={<TextLink href={href}>See all</TextLink>}>
+      <Stack gap="sm">
         {items.map((s) => (
-          <Link key={s.id} href={`/services/${s.slug}`}>
-            <ShopService
-              name={s.name}
-              priceCents={s.price_cents}
-              durationMin={s.duration_min}
-              description={s.description}
-              photoUrl={s.photo_url}
-              action="Book"
-            />
-          </Link>
+          <ShopService
+            key={s.id}
+            href={`/services/${s.slug}`}
+            name={s.name}
+            priceCents={s.price_cents}
+            durationMin={s.duration_min}
+            description={s.description}
+            photoUrl={s.photo_url}
+            action="Book"
+          />
         ))}
-      </div>
-    </section>
+      </Stack>
+    </Section>
   );
 }

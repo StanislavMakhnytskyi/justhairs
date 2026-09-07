@@ -6,6 +6,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
+import { ChipRow } from "@/components/ui/Chip";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { getServiceBySlug, getStaffForService } from "@/lib/queries";
 import { getRatingsMap } from "@/lib/reviews";
@@ -39,6 +40,14 @@ export default async function ServiceDetailPage({
   ]);
   const rating = serviceRatings[service.id];
 
+  const meta = [
+    formatDuration(service.duration_min),
+    formatPrice(service.price_cents),
+    service.deposit_cents ? `${formatPrice(service.deposit_cents)} deposit` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <AppShell>
       <TopBar title={service.name} />
@@ -53,7 +62,7 @@ export default async function ServiceDetailPage({
             priority
           />
         )}
-        <div className="p-6">
+        <div className="space-y-4 p-6">
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-[24px] font-bold tracking-tight text-text-primary">
               {service.name}
@@ -62,32 +71,17 @@ export default async function ServiceDetailPage({
               <RatingBadge rating={rating.rating} count={rating.review_count} />
             )}
           </div>
-          <p className="mt-1 text-[14px] text-text-secondary">
-            {formatDuration(service.duration_min)} · {formatPrice(service.price_cents)}
-            {service.deposit_cents
-              ? ` · ${formatPrice(service.deposit_cents)} deposit`
-              : ""}
-          </p>
+          <p className="text-[14px] text-text-secondary">{meta}</p>
           {service.description && (
-            <p className="mt-4 text-[15px] leading-relaxed text-text-primary">
+            <p className="text-[15px] leading-relaxed text-text-primary">
               {service.description}
             </p>
           )}
-
           {staff.length > 0 && (
-            <>
-              <h2 className="mt-8 text-[16px] font-bold text-text-primary">
-                Available with
-              </h2>
-              <ul className="mt-2 text-[14px] text-text-secondary">
-                {staff.map((s) => (
-                  <li key={s.id}>
-                    {s.name}
-                    {s.title ? ` — ${s.title}` : ""}
-                  </li>
-                ))}
-              </ul>
-            </>
+            <div className="space-y-2">
+              <h2 className="text-[16px] font-bold text-text-primary">Available with</h2>
+              <ChipRow items={staff.map((s) => s.name)} />
+            </div>
           )}
         </div>
       </div>

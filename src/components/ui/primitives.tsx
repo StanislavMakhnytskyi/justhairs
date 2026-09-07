@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 export function Card({
@@ -78,7 +79,27 @@ export function RatingBadge({
   );
 }
 
-export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
+export function Avatar({
+  name,
+  src,
+  size = 44,
+}: {
+  name: string;
+  src?: string | null;
+  size?: number;
+}) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   const initials = name
     .split(" ")
     .map((p) => p[0])

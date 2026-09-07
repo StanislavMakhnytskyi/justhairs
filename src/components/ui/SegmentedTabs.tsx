@@ -31,7 +31,7 @@ export function SegmentedTabs<T extends string>({
             "flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
             value === t.value
               ? "bg-surface-card text-text-primary shadow-[var(--shadow-card)]"
-              : "text-text-secondary",
+              : "text-text-secondary hover:text-text-primary",
           )}
         >
           {t.label}

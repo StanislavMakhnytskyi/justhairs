@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Stack } from "@/components/ui/Section";
+import { Hint } from "@/components/ui/Hint";
 import { DateStrip } from "@/components/ui/DateStrip";
 import { SlotGrid } from "@/components/ui/SlotGrid";
+import { dayTimeGrid } from "@/lib/salon";
 import {
   cancelAppointment,
   getAvailableSlots,
@@ -17,18 +20,29 @@ export function AppointmentActions({
   appointmentId,
   serviceId,
   currentStaffId,
+  openWeekdays,
 }: {
   appointmentId: string;
   serviceId: string;
   currentStaffId: string | null;
+  openWeekdays: number[];
 }) {
   const router = useRouter();
   const [sheet, setSheet] = useState<"none" | "reschedule" | "cancel">("none");
   const [date, setDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<string[]>([]);
-  const [time, setTime] = useState<string | null>(null);
+  const [time, setTime] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  const dayTimes = useMemo(
+    () => (date ? dayTimeGrid(format(date, "yyyy-MM-dd")) : []),
+    [date],
+  );
+  const availableSet = useMemo(
+    () => new Set(slots.map((s) => new Date(s).getTime())),
+    [slots],
+  );
 
   function pickDate(d: Date) {
     setDate(d);
@@ -46,7 +60,7 @@ export function AppointmentActions({
       const res = await rescheduleAppointment({
         appointmentId,
         staffId: currentStaffId,
-        startsAt: time,
+        startsAt: new Date(time).toISOString(),
       });
       if (res.ok) {
         setSheet("none");
@@ -68,26 +82,37 @@ export function AppointmentActions({
 
   return (
     <>
-      <div className="mt-6 flex flex-col gap-2">
+      <Stack gap="sm" className="mt-6">
         <Button variant="outlined" block onClick={() => setSheet("reschedule")}>
           Reschedule
         </Button>
         <Button variant="text" block onClick={() => setSheet("cancel")}>
           Cancel appointment
         </Button>
-      </div>
+      </Stack>
 
       <BottomSheet
         open={sheet === "reschedule"}
         onClose={() => setSheet("none")}
         title="Pick a new time"
       >
-        <DateStrip value={date} onChange={pickDate} />
+        <DateStrip
+          value={date}
+          onChange={pickDate}
+          isEnabled={(d) => openWeekdays.includes(d.getDay())}
+        />
         <div className="mt-4">
-          {date ? (
-            <SlotGrid slots={slots} value={time} onChange={setTime} />
+          {!date ? (
+            <Hint>Choose a day.</Hint>
+          ) : availableSet.size === 0 ? (
+            <Hint>No open times on this day.</Hint>
           ) : (
-            <p className="text-[13px] text-text-secondary">Choose a day.</p>
+            <SlotGrid
+              times={dayTimes}
+              available={availableSet}
+              value={time}
+              onChange={setTime}
+            />
           )}
         </div>
         {error && <p className="mt-3 text-[13px] text-error">{error}</p>}
@@ -111,14 +136,14 @@ export function AppointmentActions({
           €20 fee may apply.
         </p>
         {error && <p className="mt-3 text-[13px] text-error">{error}</p>}
-        <div className="mt-4 flex flex-col gap-2">
+        <Stack gap="sm" className="mt-4">
           <Button variant="primary" block disabled={pending} onClick={submitCancel}>
             Yes, cancel it
           </Button>
           <Button variant="text" block onClick={() => setSheet("none")}>
             Keep appointment
           </Button>
-        </div>
+        </Stack>
       </BottomSheet>
     </>
   );

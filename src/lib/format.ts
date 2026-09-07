@@ -1,3 +1,9 @@
+import { SALON_TZ } from "./salon";
+
+export { SALON_TZ };
+
+type TimeInput = string | number | Date;
+
 export function formatPrice(cents: number, currency = "EUR"): string {
   return new Intl.NumberFormat("en-IE", {
     style: "currency",
@@ -6,11 +12,8 @@ export function formatPrice(cents: number, currency = "EUR"): string {
   }).format(cents / 100);
 }
 
-/** The salon runs on one clock regardless of where the server or visitor is. */
-export const SALON_TZ = "Europe/Dublin";
-
-export function formatSlotTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-IE", {
+export function formatSlotTime(t: TimeInput): string {
+  return new Date(t).toLocaleTimeString("en-IE", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -18,8 +21,11 @@ export function formatSlotTime(iso: string): string {
   });
 }
 
-export function formatDateTime(iso: string, opts?: Intl.DateTimeFormatOptions): string {
-  return new Date(iso).toLocaleString("en-IE", {
+export function formatDateTime(
+  t: TimeInput,
+  opts?: Intl.DateTimeFormatOptions,
+): string {
+  return new Date(t).toLocaleString("en-IE", {
     weekday: "long",
     day: "numeric",
     month: "long",

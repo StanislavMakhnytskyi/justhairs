@@ -22,10 +22,10 @@ insert into services (category_id, name, slug, description, duration_min, price_
   ('11111111-0000-0000-0000-000000000002', 'Treatment',        'womens-treatment',    'Deep-conditioning or bond-repair treatment.', 30, 3500, null, false, '/ds/services/womens-treatment.jpg');
 
 -- Staff
-insert into staff (id, name, slug, title, bio) values
-  ('22222222-0000-0000-0000-000000000001', 'Amara Lee',  'amara-lee',  'Senior Stylist', 'Fifteen years behind the chair. Colour and precision cutting.'),
-  ('22222222-0000-0000-0000-000000000002', 'Devon Cole', 'devon-cole', 'Barber',         'Classic barbering, fades and beard sculpting.'),
-  ('22222222-0000-0000-0000-000000000003', 'Priya Shah', 'priya-shah', 'Stylist',        'Blow-dries, styling and treatments. Great with curls.');
+insert into staff (id, name, slug, title, bio, photo_url) values
+  ('22222222-0000-0000-0000-000000000001', 'Amara Lee',  'amara-lee',  'Senior Stylist', 'Fifteen years behind the chair. Colour and precision cutting.', '/ds/staff/amara-lee.jpg'),
+  ('22222222-0000-0000-0000-000000000002', 'Devon Cole', 'devon-cole', 'Barber',         'Classic barbering, fades and beard sculpting.',                '/ds/staff/devon-cole.jpg'),
+  ('22222222-0000-0000-0000-000000000003', 'Priya Shah', 'priya-shah', 'Stylist',        'Blow-dries, styling and treatments. Great with curls.',        '/ds/staff/priya-shah.jpg');
 
 -- Which staff perform which services
 insert into staff_services (staff_id, service_id)

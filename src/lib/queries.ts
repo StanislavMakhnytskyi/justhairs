@@ -3,33 +3,50 @@ import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
 
 export type ServiceWithCategory = Service & { category: ServiceCategory };
 
+export type WorkingHour = {
+  staff_id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+};
+
 const EMPTY_CATALOG = {
   categories: [] as ServiceCategory[],
   services: [] as ServiceWithCategory[],
   staff: [] as Staff[],
   staffServices: [] as { staff_id: string; service_id: string }[],
+  workingHours: [] as WorkingHour[],
 };
 
 export async function getCatalog() {
   if (!isSupabaseConfigured) return EMPTY_CATALOG;
   try {
     const supabase = await createClient();
-    const [{ data: categories }, { data: services }, { data: staff }, { data: links }] =
-      await Promise.all([
-        supabase.from("service_categories").select("*").order("sort"),
-        supabase
-          .from("services")
-          .select("*, category:service_categories(*)")
-          .eq("active", true)
-          .order("price_cents"),
-        supabase.from("staff").select("*").eq("active", true).order("name"),
-        supabase.from("staff_services").select("staff_id, service_id"),
-      ]);
+    const [
+      { data: categories },
+      { data: services },
+      { data: staff },
+      { data: links },
+      { data: hours },
+    ] = await Promise.all([
+      supabase.from("service_categories").select("*").order("sort"),
+      supabase
+        .from("services")
+        .select("*, category:service_categories(*)")
+        .eq("active", true)
+        .order("price_cents"),
+      supabase.from("staff").select("*").eq("active", true).order("name"),
+      supabase.from("staff_services").select("staff_id, service_id"),
+      supabase
+        .from("staff_working_hours")
+        .select("staff_id, weekday, start_time, end_time"),
+    ]);
     return {
       categories: (categories ?? []) as ServiceCategory[],
       services: (services ?? []) as unknown as ServiceWithCategory[],
       staff: (staff ?? []) as Staff[],
       staffServices: (links ?? []) as { staff_id: string; service_id: string }[],
+      workingHours: (hours ?? []) as WorkingHour[],
     };
   } catch {
     return EMPTY_CATALOG;
@@ -65,6 +82,21 @@ export async function getStaffForService(serviceId: string) {
     ).filter((s) => s.active);
   } catch {
     return [];
+  }
+}
+
+export async function getOpenWeekdays(): Promise<number[]> {
+  const fallback = [2, 3, 4, 5, 6];
+  if (!isSupabaseConfigured) return fallback;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("staff_working_hours")
+      .select("weekday");
+    const set = [...new Set((data ?? []).map((r) => r.weekday as number))];
+    return set.length ? set : fallback;
+  } catch {
+    return fallback;
   }
 }
 

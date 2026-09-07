@@ -7,10 +7,12 @@ export const button = tv({
   variants: {
     variant: {
       primary: "bg-brand text-text-on-brand hover:bg-brand-hover active:bg-brand-press",
-      outlined: "border border-brand text-brand hover:bg-brand-subtle",
-      text: "text-brand hover:bg-brand-subtle",
-      white: "bg-surface-card text-text-primary shadow-[var(--shadow-card)] hover:bg-surface-sunken",
-      success: "bg-success text-white",
+      outlined:
+        "border border-brand text-brand hover:bg-brand-subtle active:bg-brand-subtle",
+      text: "text-brand hover:bg-brand-subtle active:bg-brand-subtle",
+      white:
+        "bg-surface-card text-text-primary shadow-[var(--shadow-card)] hover:bg-surface-sunken active:bg-surface-sunken",
+      success: "bg-success text-white hover:brightness-95 active:brightness-90",
     },
     size: {
       lg: "h-12 px-5 text-[16px]",

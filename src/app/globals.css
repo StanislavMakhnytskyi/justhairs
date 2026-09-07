@@ -88,3 +88,15 @@ body {
 h1, h2, h3 {
   font-weight: 400;
 }
+
+/* Tailwind v4 preflight no longer sets this; interactive controls should say so. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}

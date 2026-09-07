@@ -18,3 +18,6 @@ allowed, no attribution required). They are resized and re-compressed for the we
 | `services/womens-blow-dry.jpg` | `photo-1562322140-8baeececf3df` |
 | `services/womens-styling.jpg` | `photo-1580618672591-eb180b1a973f` |
 | `services/womens-treatment.jpg` | `photo-1595476108010-b4d1f102b1b1` |
+| `staff/amara-lee.jpg` | `photo-1580489944761-15a19d654956` |
+| `staff/devon-cole.jpg` | `photo-1507003211169-0a1dd7228f2d` |
+| `staff/priya-shah.jpg` | `photo-1494790108377-be9c29b29330` |

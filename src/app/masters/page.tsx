@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/ui/TopBar";
-import { Avatar, RatingBadge } from "@/components/ui/primitives";
+import { Stack } from "@/components/ui/Section";
+import { EmptyState } from "@/components/ui/primitives";
+import { MasterCard, type Master } from "@/components/ui/MasterCard";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getRatingsMap } from "@/lib/reviews";
+import { summariseHours } from "@/lib/salon";
 import type { Staff } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
@@ -11,51 +14,62 @@ export const metadata: Metadata = {
   description: "Meet the stylists and barbers at justhairs.",
 };
 
+type Row = Staff & {
+  staff_services: { services: { name: string } | null }[];
+  staff_working_hours: { weekday: number; start_time: string; end_time: string }[];
+};
+
 export default async function MastersPage() {
-  let staff: Staff[] = [];
+  let rows: Row[] = [];
   try {
     if (!isSupabaseConfigured) throw new Error("not configured");
     const supabase = await createClient();
     const { data } = await supabase
       .from("staff")
-      .select("*")
+      .select(
+        "*, staff_services(services(name)), staff_working_hours(weekday, start_time, end_time)",
+      )
       .eq("active", true)
       .order("name");
-    staff = (data ?? []) as Staff[];
+    rows = (data ?? []) as unknown as Row[];
   } catch {
-    staff = [];
+    rows = [];
   }
   const ratings = await getRatingsMap("staff_ratings");
+
+  const masters: Master[] = rows.map((s) => ({
+    id: s.id,
+    name: s.name,
+    title: s.title,
+    bio: s.bio,
+    photo_url: s.photo_url,
+    specialties: [
+      ...new Set(
+        (s.staff_services ?? [])
+          .map((l) => l.services?.name)
+          .filter((n): n is string => !!n),
+      ),
+    ],
+    hours: summariseHours(s.staff_working_hours ?? []),
+    rating: ratings[s.id],
+  }));
 
   return (
     <AppShell>
       <TopBar title="Our team" />
-      <div className="flex flex-col gap-3 p-4">
-        {staff.map((s) => {
-          const r = ratings[s.id];
-          return (
-            <div
-              key={s.id}
-              className="flex gap-3 rounded-[var(--radius-md)] bg-surface-card p-4 shadow-[var(--shadow-card)]"
-            >
-              <Avatar name={s.name} size={52} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[16px] font-bold text-text-primary">{s.name}</p>
-                  {r && r.review_count > 0 && (
-                    <RatingBadge rating={r.rating} count={r.review_count} />
-                  )}
-                </div>
-                {s.title && (
-                  <p className="text-[13px] text-text-secondary">{s.title}</p>
-                )}
-                {s.bio && (
-                  <p className="mt-2 text-[13px] text-text-primary">{s.bio}</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div className="p-4">
+        {masters.length === 0 ? (
+          <EmptyState
+            title="Team details unavailable"
+            description="Check back shortly."
+          />
+        ) : (
+          <Stack>
+            {masters.map((m) => (
+              <MasterCard key={m.id} master={m} />
+            ))}
+          </Stack>
+        )}
       </div>
     </AppShell>
   );

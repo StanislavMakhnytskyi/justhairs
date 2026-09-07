@@ -4,39 +4,44 @@ import { cn } from "@/lib/cn";
 import { formatSlotTime } from "@/lib/format";
 
 export function SlotGrid({
-  slots,
+  times,
+  available,
   value,
   onChange,
 }: {
-  slots: string[]; // ISO timestamps
-  value: string | null;
-  onChange: (iso: string) => void;
+  /** Every candidate start time for the day, as epoch millis. */
+  times: number[];
+  /** The subset that can actually be booked. */
+  available: Set<number>;
+  value: number | null;
+  onChange: (t: number) => void;
 }) {
-  if (slots.length === 0) {
-    return (
-      <p className="rounded-[var(--radius-md)] bg-surface-sunken px-4 py-6 text-center text-[13px] text-text-secondary">
-        No open times on this day. Try another date.
-      </p>
-    );
+  if (times.length === 0) {
+    return null;
   }
   return (
     <div role="group" aria-label="Choose a time" className="grid grid-cols-3 gap-2">
-      {slots.map((iso) => {
-        const active = iso === value;
-        const label = formatSlotTime(iso);
+      {times.map((t) => {
+        const active = t === value;
+        const open = available.has(t);
         return (
           <button
-            key={iso}
-            onClick={() => onChange(iso)}
+            key={t}
+            type="button"
+            onClick={() => open && onChange(t)}
+            disabled={!open}
             aria-pressed={active}
             className={cn(
               "rounded-[var(--radius-sm)] border py-2.5 text-[14px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
-              active
-                ? "border-brand bg-brand text-text-on-brand"
-                : "border-border-default bg-surface-card text-text-primary",
+              !open &&
+                "cursor-not-allowed border-border-default bg-surface-sunken text-text-tertiary line-through",
+              open &&
+                !active &&
+                "border-border-default bg-surface-card text-text-primary hover:border-brand-hover",
+              active && "border-brand bg-brand text-text-on-brand",
             )}
           >
-            {label}
+            {formatSlotTime(t)}
           </button>
         );
       })}

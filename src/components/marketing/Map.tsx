@@ -1,36 +1,39 @@
-const ADDRESS = "14 Parnell Street, Dublin 1, Ireland";
+import { SALON } from "@/lib/salon";
+
+const { lat, lon, addressOneLine } = SALON;
 
 export function Map() {
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    ADDRESS,
-  )}`;
 
-  if (key) {
-    return (
-      <div className="overflow-hidden rounded-[var(--radius-md)] border border-border-default">
-        <iframe
-          title="justhairs location"
-          className="block h-44 w-full"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(
-            ADDRESS,
-          )}`}
-        />
-      </div>
-    );
-  }
+  const src = key
+    ? `https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(
+        addressOneLine,
+      )}&zoom=16`
+    : `https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.006}%2C${
+        lat - 0.003
+      }%2C${lon + 0.006}%2C${lat + 0.003}&layer=mapnik&marker=${lat}%2C${lon}`;
+
+  const link = key
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressOneLine)}`
+    : `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
 
   return (
-    <a
-      href={mapsLink}
-      target="_blank"
-      rel="noreferrer"
-      className="flex h-44 flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] border border-border-default bg-surface-sunken text-center"
-    >
-      <span className="text-[14px] font-bold text-text-primary">{ADDRESS}</span>
-      <span className="text-[13px] font-bold text-link">Open in Google Maps</span>
-    </a>
+    <div className="overflow-hidden rounded-[var(--radius-md)] border border-border-default">
+      <iframe
+        title={`${SALON.name} location`}
+        src={src}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className="block h-44 w-full border-0"
+      />
+      <a
+        href={link}
+        target="_blank"
+        rel="noreferrer"
+        className="block border-t border-border-default bg-surface-card px-4 py-2.5 text-[13px] font-bold text-link transition-colors hover:bg-surface-sunken hover:text-brand-hover"
+      >
+        Open in {key ? "Google Maps" : "OpenStreetMap"}
+      </a>
+    </div>
   );
 }
