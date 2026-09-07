@@ -8,9 +8,12 @@ export const sans = DM_Sans({
 });
 
 // Display face — used only for the logo/wordmark, so the brand mark never looks
-// like body copy.
+// like body copy. Not preloaded: it's a handful of glyphs in the corner and
+// shouldn't compete with the body face for the LCP.
 export const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["600", "800"],
+  preload: false,
+  display: "swap",
 });

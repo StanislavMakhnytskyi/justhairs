@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Receipt, User } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { LinkPendingBar } from "@/components/ui/LinkPendingBar";
 
 const items = [
   { href: "/account", label: "Home", icon: Home, exact: true },
@@ -24,12 +25,13 @@ export function BottomNav() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2",
+              "relative flex flex-1 flex-col items-center gap-1 overflow-hidden py-2.5 text-[11px] font-medium transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2",
               active ? "text-brand" : "text-text-tertiary",
             )}
           >
             <Icon size={22} />
             {label}
+            <LinkPendingBar />
           </Link>
         );
       })}

@@ -119,7 +119,8 @@ export function AppointmentActions({
         <Button
           block
           className="mt-4"
-          disabled={!time || pending}
+          disabled={!time}
+          loading={pending}
           onClick={submitReschedule}
         >
           Confirm new time
@@ -137,7 +138,7 @@ export function AppointmentActions({
         </p>
         {error && <p className="mt-3 text-[13px] text-error">{error}</p>}
         <Stack gap="sm" className="mt-4">
-          <Button variant="primary" block disabled={pending} onClick={submitCancel}>
+          <Button variant="primary" block loading={pending} onClick={submitCancel}>
             Yes, cancel it
           </Button>
           <Button variant="text" block onClick={() => setSheet("none")}>

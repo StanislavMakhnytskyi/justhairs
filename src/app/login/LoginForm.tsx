@@ -65,7 +65,7 @@ export function LoginForm() {
 
   return (
     <div className="mt-8 flex flex-col gap-4">
-      <Button onClick={google} variant="white" block disabled={busy}>
+      <Button onClick={google} variant="white" block loading={busy}>
         Continue with Google
       </Button>
 
@@ -84,7 +84,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Button type="submit" variant="outlined" block disabled={busy}>
+          <Button type="submit" variant="outlined" block loading={busy}>
             Email me a code
           </Button>
         </form>
@@ -100,7 +100,7 @@ export function LoginForm() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
           />
-          <Button type="submit" block disabled={busy || code.length < 6}>
+          <Button type="submit" block loading={busy} disabled={code.length < 6}>
             Verify and sign in
           </Button>
           <Button

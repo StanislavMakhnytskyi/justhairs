@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { BookingFlow } from "./BookingFlow";
+import { BookingFlowSkeleton } from "./BookingFlowSkeleton";
 import { getCatalog, getCurrentProfile } from "@/lib/queries";
 
 export default async function BookPage() {
@@ -11,7 +12,7 @@ export default async function BookPage() {
   const openWeekdays = [...new Set(workingHours.map((h) => h.weekday))];
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<BookingFlowSkeleton />}>
       <BookingFlow
         services={services}
         staff={staff}

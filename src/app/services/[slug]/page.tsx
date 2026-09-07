@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/ui/TopBar";
@@ -7,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
 import { ChipLink } from "@/components/ui/Chip";
+import { SmoothImage } from "@/components/ui/SmoothImage";
+import { blurFor } from "@/lib/assets";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { getCatalog, getServiceBySlug, getStaffForService } from "@/lib/queries";
 import { getRatingsMap } from "@/lib/reviews";
@@ -61,13 +62,16 @@ export default async function ServiceDetailPage({
       <TopBar title={service.name} />
       <div className="flex-1">
         {service.photo_url && (
-          <Image
+          <SmoothImage
             src={service.photo_url}
             alt=""
             width={960}
             height={540}
-            className="aspect-video w-full object-cover"
             priority
+            blurDataURL={blurFor(service.photo_url)}
+            sizes="(max-width: 480px) 100vw, 480px"
+            wrapperClassName="block w-full"
+            className="aspect-video w-full object-cover"
           />
         )}
         <div className="space-y-4 p-6">

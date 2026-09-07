@@ -29,7 +29,7 @@ export function LeafletMap() {
     let map: import("leaflet").Map | undefined;
     let disposed = false;
 
-    import("leaflet").then(({ default: L }) => {
+    const init = () => import("leaflet").then(({ default: L }) => {
       if (disposed || !el || (el as { _leaflet_id?: number })._leaflet_id) return;
 
       map = L.map(el, {
@@ -60,8 +60,31 @@ export function LeafletMap() {
       setTimeout(() => map?.invalidateSize(), 150);
     });
 
+    // The map sits well below the fold — don't spend ~45KB of Leaflet on it
+    // until the reader is nearly there. The container is already sized, so
+    // deferring costs no layout shift.
+    if (typeof IntersectionObserver === "undefined") {
+      void init();
+      return () => {
+        disposed = true;
+        map?.remove();
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          observer.disconnect();
+          void init();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+
     return () => {
       disposed = true;
+      observer.disconnect();
       map?.remove();
     };
   }, []);

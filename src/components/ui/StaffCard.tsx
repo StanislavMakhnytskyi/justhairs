@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { Avatar, RatingBadge } from "./primitives";
+import { LinkPendingBar } from "./LinkPendingBar";
 import type { Rating } from "@/lib/supabase/types";
 
 const shell =
-  "flex w-full items-center gap-3 rounded-[var(--radius-md)] border p-3 text-left transition-colors";
+  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)]";
 const interactive =
-  "hover:border-brand-hover focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
+  "hover:border-brand-hover motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
 
 export function StaffCard({
   name,
@@ -46,7 +47,13 @@ export function StaffCard({
     </>
   );
 
-  if (href) return <Link href={href} className={cls}>{body}</Link>;
+  if (href)
+    return (
+      <Link href={href} className={cls}>
+        {body}
+        <LinkPendingBar />
+      </Link>
+    );
   if (onClick)
     return (
       <button type="button" onClick={onClick} className={cls}>

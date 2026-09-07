@@ -1,12 +1,13 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatPrice } from "@/lib/format";
+import { SmoothImage } from "./SmoothImage";
+import { LinkPendingBar } from "./LinkPendingBar";
 
 const shell =
-  "flex w-full items-center gap-3 rounded-[var(--radius-md)] border p-3 text-left transition-colors";
+  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)]";
 const interactive =
-  "hover:border-brand-hover focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
+  "hover:border-brand-hover motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
 
 export function ShopService({
   name,
@@ -38,12 +39,14 @@ export function ShopService({
   const body = (
     <>
       {photoUrl && (
-        <Image
+        <SmoothImage
           src={photoUrl}
           alt=""
           width={56}
           height={56}
-          className="h-14 w-14 shrink-0 rounded-[var(--radius-sm)] object-cover"
+          sizes="56px"
+          wrapperClassName="h-14 w-14 shrink-0 rounded-[var(--radius-sm)]"
+          className="h-14 w-14 object-cover"
         />
       )}
       <div className="min-w-0 flex-1">
@@ -72,7 +75,13 @@ export function ShopService({
     </>
   );
 
-  if (href) return <Link href={href} className={cls}>{body}</Link>;
+  if (href)
+    return (
+      <Link href={href} className={cls}>
+        {body}
+        <LinkPendingBar />
+      </Link>
+    );
   if (onClick)
     return (
       <button type="button" onClick={onClick} className={cls}>

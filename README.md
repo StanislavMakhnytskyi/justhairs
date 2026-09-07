@@ -54,7 +54,9 @@ for later milestones. Their tables exist in the schema; the routes show a
 
 4. **Auth providers** (Supabase → Authentication → Providers):
 
-   - **Email**: enabled by default — magic links work out of the box.
+   - **Email**: enabled by default. Paste `supabase/email-templates/otp.html` into the
+     **Magic Link** and **Confirm signup** templates so sign-in sends a 6-digit code
+     rather than a link.
    - **Google**: enable it, create a Web OAuth client in Google Cloud Console,
      add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
      redirect URI, paste the client ID/secret into Supabase, and add
@@ -69,9 +71,19 @@ for later milestones. Their tables exist in the schema; the routes show a
 
    Creates a handful of demo customers (`demo@justhairs.test` and friends) with
    completed appointments and reviews. Idempotent — safe to re-run. Sign in as
-   `demo@justhairs.test` via the email magic link to see the dashboard populated.
+   `demo@justhairs.test` (email code) to see the dashboard populated.
 
-6. **Regenerate DB types** (optional but recommended once the schema is live):
+6. **Regenerate image blur previews** (only when the imagery in the Storage
+   `assets` bucket changes):
+
+   ```bash
+   node --env-file=.env.local scripts/gen-blur.mjs
+   ```
+
+   Writes `src/lib/blur.generated.ts` — tiny base64 previews that `next/image`
+   shows while the real photo loads. Commit the result.
+
+7. **Regenerate DB types** (optional but recommended once the schema is live):
 
    ```bash
    npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.gen.ts
@@ -79,7 +91,7 @@ for later milestones. Their tables exist in the schema; the routes show a
 
    The app currently uses hand-authored domain types in `src/lib/supabase/types.ts`.
 
-7. **Run**
+8. **Run**
 
    ```bash
    npm run dev
@@ -116,8 +128,8 @@ src/
     services/                    Service list + detail
     masters/                     Team
     book/                        4-step booking flow (BookingFlow.tsx) + confirmation
-    login/                       Google OAuth + email magic link
-    auth/callback/               OAuth + magic-link code exchange
+    login/                       Google OAuth + email one-time code
+    auth/callback/               OAuth code exchange
     account/                     Protected: dashboard, appointments, profile, stubs
     api/stripe/webhook/          Stripe event handler (skeleton)
   components/
@@ -134,7 +146,10 @@ supabase/
   migrations/0001_init.sql       Schema, RLS, booking-engine RPCs
   migrations/0002_reviews_and_cron.sql  Review guard, rating views, pg_cron
   seed.sql                       Demo salon, services, staff, hours
-scripts/seed-demo.mjs            Optional: demo customers, past visits, reviews
+scripts/
+  seed-demo.mjs                  Optional: demo customers, past visits, reviews
+  sync-catalog.mjs               Push catalog changes to a live DB
+  gen-blur.mjs                   Regenerate image blur previews
 ```
 
 ## Booking engine

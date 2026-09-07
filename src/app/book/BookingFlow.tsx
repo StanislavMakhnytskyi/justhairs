@@ -21,7 +21,7 @@ import { SummaryList, SummaryRow } from "@/components/ui/SummaryList";
 import { ShopService } from "@/components/ui/ShopService";
 import { StaffCard } from "@/components/ui/StaffCard";
 import { DateStrip } from "@/components/ui/DateStrip";
-import { SlotGrid } from "@/components/ui/SlotGrid";
+import { SlotGrid, SlotGridSkeleton } from "@/components/ui/SlotGrid";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { dayTimeGrid, nextOpenDates } from "@/lib/salon";
 import { createBooking, getAvailableSlots } from "@/lib/actions/booking";
@@ -167,6 +167,16 @@ export function BookingFlow({
     if (step === 3) router.prefetch("/book/confirmation/pending");
   }, [step, router]);
 
+  // Moving between steps should start you at the top, but not on first paint
+  // (a deep link may point at a specific step already).
+  const lastStep = useRef(step);
+  useEffect(() => {
+    if (lastStep.current === step) return;
+    lastStep.current = step;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  }, [step]);
+
   // If the sign-in round-trip dropped the query string, restore the booking the
   // user was about to confirm from sessionStorage.
   useEffect(() => {
@@ -246,7 +256,10 @@ export function BookingFlow({
         <StepTabs steps={STEPS} current={step} />
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pb-4">
+      <div
+        key={step}
+        className="flex flex-1 flex-col px-4 pb-4 motion-safe:animate-fade-in-up"
+      >
         {step === 0 && (
           <Stack gap="sm">
             {services.map((s) => (
@@ -316,7 +329,7 @@ export function BookingFlow({
             {!dateStr ? (
               <Hint>Pick a day to see open times.</Hint>
             ) : loadingSlots || slots === null ? (
-              <Hint>Finding open times…</Hint>
+              <SlotGridSkeleton />
             ) : availableSet.size === 0 ? (
               <Hint>No open times on this day. Try another date.</Hint>
             ) : (
@@ -352,7 +365,7 @@ export function BookingFlow({
 
       {step === 3 && service && (
         <StickyBar label="Total" value={formatPrice(service.price_cents)}>
-          <Button onClick={confirm} disabled={pending} className="shrink-0">
+          <Button onClick={confirm} loading={pending} className="shrink-0">
             {isAuthed ? "Confirm booking" : "Sign in to confirm"}
           </Button>
         </StickyBar>

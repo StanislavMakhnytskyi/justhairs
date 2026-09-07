@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { cn } from "@/lib/cn";
+import { SmoothImage } from "./SmoothImage";
 
 export function Card({
   className,
@@ -90,13 +90,15 @@ export function Avatar({
 }) {
   if (src) {
     return (
-      <Image
+      <SmoothImage
         src={src}
         alt={name}
         width={size}
         height={size}
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: size, height: size }}
+        sizes={`${size}px`}
+        wrapperClassName="shrink-0 rounded-full"
+        wrapperStyle={{ width: size, height: size }}
+        className="h-full w-full object-cover"
       />
     );
   }

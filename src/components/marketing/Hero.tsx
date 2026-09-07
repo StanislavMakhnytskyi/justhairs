@@ -1,19 +1,18 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
-import { HERO_BLUR, HERO_IMAGE } from "@/lib/assets";
+import { SmoothImage } from "@/components/ui/SmoothImage";
+import { HERO_IMAGE, blurFor } from "@/lib/assets";
 
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden px-6 pb-8 pt-14 text-white">
-      <Image
+      <SmoothImage
         src={HERO_IMAGE}
         alt=""
         fill
         priority
-        placeholder="blur"
-        blurDataURL={HERO_BLUR}
-        sizes="480px"
+        blurDataURL={blurFor(HERO_IMAGE)}
+        sizes="(max-width: 480px) 100vw, 480px"
         className="-z-10 object-cover"
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-purple-600/75 to-purple-800/85" />

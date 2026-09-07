@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { LinkPendingBar } from "./LinkPendingBar";
 
 const base =
   "inline-flex items-center rounded-[var(--radius-pill)] bg-surface-sunken px-2.5 py-1 text-[12px] font-medium text-text-secondary";
@@ -28,11 +29,12 @@ export function ChipLink({
       href={href}
       className={cn(
         base,
-        "transition-colors hover:bg-brand-subtle hover:text-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
+        "relative overflow-hidden transition-[color,background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-brand-subtle hover:text-brand motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
         className,
       )}
     >
       {children}
+      <LinkPendingBar />
     </Link>
   );
 }

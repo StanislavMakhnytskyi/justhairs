@@ -4,9 +4,8 @@ import { getCatalog, getCurrentProfile } from "@/lib/queries";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage() {
-  const profile = await getCurrentProfile();
+  const [profile, { staff }] = await Promise.all([getCurrentProfile(), getCatalog()]);
   if (!profile) redirect("/login?next=/account/profile");
-  const { staff } = await getCatalog();
 
   return (
     <div>

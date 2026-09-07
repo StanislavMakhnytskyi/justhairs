@@ -74,7 +74,7 @@ export function ReviewPrompt({
           className="mt-4 w-full rounded-[var(--radius-sm)] border border-border-strong bg-surface-card p-3 text-[14px] text-text-primary outline-none focus:border-brand"
         />
         {error && <p className="mt-2 text-[13px] text-error">{error}</p>}
-        <Button block className="mt-4" disabled={pending || rating === 0} onClick={send}>
+        <Button block className="mt-4" disabled={rating === 0} loading={pending} onClick={send}>
           Submit review
         </Button>
       </BottomSheet>

@@ -97,7 +97,7 @@ export function ProfileForm({
       <ThemeToggle />
 
       {saved && <p className="text-[13px] text-success">Saved.</p>}
-      <Button type="submit" block disabled={pending}>
+      <Button type="submit" block loading={pending}>
         Save changes
       </Button>
       <Button
