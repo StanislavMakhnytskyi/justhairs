@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/ThemeScript";
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
+import { sans, display } from "@/lib/fonts";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -42,7 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${sans.variable} ${display.variable} h-full`}
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript />
       </head>

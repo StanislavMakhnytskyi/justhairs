@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/ui/Logo";
 import { HERO_BLUR, HERO_IMAGE } from "@/lib/assets";
 
 export function Hero() {
@@ -16,10 +17,8 @@ export function Hero() {
         className="-z-10 object-cover"
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-purple-600/75 to-purple-800/85" />
-      <p className="text-[13px] font-bold uppercase tracking-[0.14em] opacity-80">
-        justhairs
-      </p>
-      <h1 className="mt-3 text-[32px] font-bold leading-[1.1] tracking-tight">
+      <Logo tone="onBrand" size="lg" />
+      <h1 className="mt-4 text-[32px] font-bold leading-[1.1] tracking-tight">
         Book your look in under a minute
       </h1>
       <p className="mt-2 max-w-[38ch] text-[14px] opacity-90">

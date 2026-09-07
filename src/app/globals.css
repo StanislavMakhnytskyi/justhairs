@@ -37,6 +37,7 @@
   --color-purple-700: var(--purple-700);
 
   --font-sans: var(--font-dm-sans), ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-display), var(--font-dm-sans), ui-sans-serif, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;

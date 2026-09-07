@@ -6,7 +6,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
-import { ChipRow } from "@/components/ui/Chip";
+import { ChipLink } from "@/components/ui/Chip";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { getServiceBySlug, getStaffForService } from "@/lib/queries";
 import { getRatingsMap } from "@/lib/reviews";
@@ -80,7 +80,16 @@ export default async function ServiceDetailPage({
           {staff.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-[16px] font-bold text-text-primary">Available with</h2>
-              <ChipRow items={staff.map((s) => s.name)} />
+              <div className="flex flex-wrap gap-1.5">
+                {staff.map((s) => (
+                  <ChipLink
+                    key={s.id}
+                    href={`/book?service=${service.slug}&staff=${s.id}&step=date`}
+                  >
+                    {s.name}
+                  </ChipLink>
+                ))}
+              </div>
             </div>
           )}
         </div>
