@@ -17,6 +17,17 @@ export default function LoginPage() {
         <Suspense fallback={null}>
           <LoginForm />
         </Suspense>
+        <p className="mt-6 text-[12px] text-text-secondary">
+          By continuing you agree to our{" "}
+          <a href="/terms" className="font-bold text-link underline">
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" className="font-bold text-link underline">
+            Privacy Policy
+          </a>
+          .
+        </p>
       </div>
     </AppShell>
   );

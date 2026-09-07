@@ -6,6 +6,9 @@ export const SALON_CLOSE_HOUR = 18; // 18:00 local
 export const SLOT_STEP_MIN = 30; // display grid step
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Swap for a real contact address before sharing publicly.
+export const LEGAL_CONTACT = "hello@justhairs.example";
+
 export const SALON = {
   name: "justhairs",
   addressLines: ["14 Parnell Street", "Dublin 1", "Ireland"],

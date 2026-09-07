@@ -2,6 +2,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Hero } from "@/components/marketing/Hero";
 import { ResumeBooking } from "@/components/marketing/ResumeBooking";
 import { VisitUs } from "@/components/marketing/VisitUs";
+import { PageFooter } from "@/components/marketing/PageFooter";
 import { Button } from "@/components/ui/Button";
 import { Section, Stack } from "@/components/ui/Section";
 import { Divider, RatingBadge } from "@/components/ui/primitives";
@@ -96,6 +97,8 @@ export default async function HomePage() {
           Book now
         </Button>
       </Section>
+
+      <PageFooter />
     </AppShell>
   );
 }
