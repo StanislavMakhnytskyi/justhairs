@@ -26,7 +26,6 @@ export function ProfileForm({
     birthday: profile.birthday ?? "",
     preferred_staff_id: profile.preferred_staff_id ?? "",
     email_notif: profile.notification_prefs?.email ?? true,
-    sms_notif: profile.notification_prefs?.sms ?? false,
   });
 
   function save(e: React.FormEvent) {
@@ -38,7 +37,7 @@ export function ProfileForm({
         phone: form.phone,
         birthday: form.birthday,
         preferred_staff_id: form.preferred_staff_id || null,
-        notification_prefs: { email: form.email_notif, sms: form.sms_notif },
+        notification_prefs: { email: form.email_notif, sms: false },
       });
       setSaved(true);
     });
@@ -83,23 +82,17 @@ export function ProfileForm({
 
       <Divider className="my-2" />
 
-      <p className="text-[13px] font-bold text-text-primary">Notifications</p>
       <Toggle
-        label="Email"
+        label="Email reminders"
         checked={form.email_notif}
         onChange={(v) => setForm({ ...form, email_notif: v })}
-      />
-      <Toggle
-        label="SMS"
-        checked={form.sms_notif}
-        onChange={(v) => setForm({ ...form, sms_notif: v })}
       />
 
       <Divider className="my-2" />
 
       <div className="flex items-center gap-2 text-[13px] text-text-secondary">
         <CheckCircle2 size={16} className="text-success" />
-        {profile.phone_verified ? "Phone verified" : "Signed in"}
+        Signed in{profile.email ? ` as ${profile.email}` : ""}
       </div>
       <ThemeToggle />
 

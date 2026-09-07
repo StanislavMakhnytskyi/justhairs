@@ -54,13 +54,12 @@ for later milestones. Their tables exist in the schema; the routes show a
 
 4. **Auth providers** (Supabase → Authentication → Providers):
 
-   - **Google**: enable, add your OAuth client ID/secret, and add
-     `http://localhost:3000/auth/callback` (and your Vercel URL) to the provider's
-     redirect URIs and to Authentication → URL Configuration → Redirect URLs.
    - **Email**: enabled by default — magic links work out of the box.
-   - **Phone/SMS**: leave `NEXT_PUBLIC_SMS_ENABLED=false` until you attach an SMS
-     provider (Twilio/MessageBird) in Supabase. The sign-in screen shows a
-     "not configured" notice until then; the OTP UI and wiring are already in place.
+   - **Google**: enable it, create a Web OAuth client in Google Cloud Console,
+     add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
+     redirect URI, paste the client ID/secret into Supabase, and add
+     `http://localhost:3000/**` + your Vercel URL to Authentication → URL
+     Configuration → Redirect URLs.
 
 5. **Demo data** (optional — past visits + reviews so the UI has real content):
 
@@ -72,12 +71,7 @@ for later milestones. Their tables exist in the schema; the routes show a
    completed appointments and reviews. Idempotent — safe to re-run. Sign in as
    `demo@justhairs.test` via the email magic link to see the dashboard populated.
 
-6. **Google Maps** (optional): set `NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY` to a
-   [Maps Embed API](https://developers.google.com/maps/documentation/embed/get-api-key)
-   key to show a map on the Home page. Without it, the address falls back to an
-   "Open in Google Maps" link.
-
-7. **Regenerate DB types** (optional but recommended once the schema is live):
+6. **Regenerate DB types** (optional but recommended once the schema is live):
 
    ```bash
    npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.gen.ts
@@ -85,7 +79,7 @@ for later milestones. Their tables exist in the schema; the routes show a
 
    The app currently uses hand-authored domain types in `src/lib/supabase/types.ts`.
 
-8. **Run**
+7. **Run**
 
    ```bash
    npm run dev
@@ -122,7 +116,7 @@ src/
     services/                    Service list + detail
     masters/                     Team
     book/                        4-step booking flow (BookingFlow.tsx) + confirmation
-    login/                       Google / magic link / phone OTP
+    login/                       Google OAuth + email magic link
     auth/callback/               OAuth + magic-link code exchange
     account/                     Protected: dashboard, appointments, profile, stubs
     api/stripe/webhook/          Stripe event handler (skeleton)
