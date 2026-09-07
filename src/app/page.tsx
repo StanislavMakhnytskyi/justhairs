@@ -1,24 +1,35 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { Hero } from "@/components/marketing/Hero";
+import { ResumeBooking } from "@/components/marketing/ResumeBooking";
 import { VisitUs } from "@/components/marketing/VisitUs";
 import { Button } from "@/components/ui/Button";
 import { Section, Stack } from "@/components/ui/Section";
 import { Divider, RatingBadge } from "@/components/ui/primitives";
 import { TextLink } from "@/components/ui/TextLink";
 import { ShopService } from "@/components/ui/ShopService";
-import { StaffCard } from "@/components/ui/StaffCard";
+import { MasterCard } from "@/components/ui/MasterCard";
 import { ReviewCard } from "@/components/ui/ReviewCard";
 import { Hint } from "@/components/ui/Hint";
 import { getCatalog } from "@/lib/queries";
+import { buildMasters } from "@/lib/masters";
 import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
 export default async function HomePage() {
-  const [{ services, staff }, reviews, overall, staffRatings] = await Promise.all([
-    getCatalog(),
-    getLatestReviews(3),
-    getOverallRating(),
-    getRatingsMap("staff_ratings"),
-  ]);
+  const [{ services, staff, staffServices, workingHours }, reviews, overall, staffRatings] =
+    await Promise.all([
+      getCatalog(),
+      getLatestReviews(3),
+      getOverallRating(),
+      getRatingsMap("staff_ratings"),
+    ]);
+
+  const masters = buildMasters(
+    staff,
+    staffServices,
+    services,
+    workingHours,
+    staffRatings,
+  );
 
   const men = services.filter((s) => s.category.gender === "men");
   const women = services.filter((s) => s.category.gender === "women");
@@ -27,6 +38,7 @@ export default async function HomePage() {
   return (
     <AppShell>
       <Hero />
+      <ResumeBooking />
 
       <ServiceSection title="Men" href="/services?category=men" items={men.slice(0, 3)} />
       <ServiceSection
@@ -38,18 +50,15 @@ export default async function HomePage() {
 
       <Section
         title="Our team"
-        action={<TextLink href="/masters">See all</TextLink>}
+        action={
+          masters.length > 3 ? (
+            <TextLink href="/masters">See all</TextLink>
+          ) : undefined
+        }
       >
-        <Stack gap="sm">
-          {staff.map((s) => (
-            <StaffCard
-              key={s.id}
-              href="/masters"
-              name={s.name}
-              subtitle={s.title}
-              photoUrl={s.photo_url}
-              rating={staffRatings[s.id]}
-            />
+        <Stack>
+          {masters.slice(0, 3).map((m) => (
+            <MasterCard key={m.id} master={m} />
           ))}
         </Stack>
       </Section>

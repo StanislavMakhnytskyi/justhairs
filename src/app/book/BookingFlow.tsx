@@ -22,6 +22,9 @@ import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
 
 const STEPS = ["Service", "Specialist", "Date & time", "Review"];
+const PENDING_KEY = "justhairs:pending-booking";
+
+type Pending = { service: string; staff: string; date: string; time: string };
 
 type Props = {
   services: ServiceWithCategory[];
@@ -118,14 +121,55 @@ export function BookingFlow({
     if (needsSlots) loadSlots(dateStr!, staffId);
   }, [needsSlots, dateStr, staffId, loadSlots]);
 
+  // If the sign-in round-trip dropped the query string, restore the booking the
+  // user was about to confirm from sessionStorage.
+  useEffect(() => {
+    if (serviceSlug) return;
+    try {
+      const raw = sessionStorage.getItem(PENDING_KEY);
+      if (!raw) return;
+      const p = JSON.parse(raw) as Pending;
+      sessionStorage.removeItem(PENDING_KEY);
+      if (p.service && p.time) {
+        setParams({
+          service: p.service,
+          staff: p.staff || "any",
+          date: p.date,
+          time: p.time,
+          step: "review",
+        });
+      }
+    } catch {
+      /* ignore malformed storage */
+    }
+  }, [serviceSlug, setParams]);
+
   function goToStep(i: number) {
     setParams({ step: STEPS[i].toLowerCase().split(" ")[0] });
+  }
+
+  function goBack() {
+    if (step > 0) goToStep(step - 1);
+    else router.push("/");
   }
 
   async function confirm() {
     if (!service || !time) return;
     setError(null);
     if (!isAuthed) {
+      try {
+        sessionStorage.setItem(
+          PENDING_KEY,
+          JSON.stringify({
+            service: serviceSlug,
+            staff: staffId,
+            date: dateStr,
+            time,
+          }),
+        );
+      } catch {
+        /* storage unavailable — the next param below still carries state */
+      }
       router.push(
         `/login?next=${encodeURIComponent(`${pathname}?${params.toString()}`)}`,
       );
@@ -151,10 +195,7 @@ export function BookingFlow({
 
   return (
     <AppShell>
-      <TopBar
-        title="Book appointment"
-        onBack={() => (step === 0 ? router.push("/services") : goToStep(step - 1))}
-      />
+      <TopBar title="Book appointment" onBack={goBack} />
       <div className="p-4">
         <StepTabs steps={STEPS} current={step} />
       </div>
