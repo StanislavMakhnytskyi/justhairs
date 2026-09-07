@@ -1,4 +1,8 @@
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import {
+  createClient,
+  createPublicClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/server";
 import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
 
 export type ServiceWithCategory = Service & { category: ServiceCategory };
@@ -21,7 +25,7 @@ const EMPTY_CATALOG = {
 export async function getCatalog() {
   if (!isSupabaseConfigured) return EMPTY_CATALOG;
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const [
       { data: categories },
       { data: services },
@@ -56,7 +60,7 @@ export async function getCatalog() {
 export async function getServiceBySlug(slug: string) {
   if (!isSupabaseConfigured) return null;
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from("services")
       .select("*, category:service_categories(*)")
@@ -72,7 +76,7 @@ export async function getServiceBySlug(slug: string) {
 export async function getStaffForService(serviceId: string) {
   if (!isSupabaseConfigured) return [];
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from("staff_services")
       .select("staff:staff(*)")
@@ -89,7 +93,7 @@ export async function getOpenWeekdays(): Promise<number[]> {
   const fallback = [2, 3, 4, 5, 6];
   if (!isSupabaseConfigured) return fallback;
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from("staff_working_hours")
       .select("weekday");

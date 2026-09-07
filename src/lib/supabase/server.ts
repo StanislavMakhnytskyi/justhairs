@@ -32,6 +32,19 @@ export async function createClient() {
   );
 }
 
+/**
+ * Cookie-free anon client for public data (catalog, reviews, ratings). Using
+ * this instead of createClient() keeps a page eligible for static generation /
+ * ISR, since it never touches request cookies.
+ */
+export function createPublicClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key",
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
+
 /** Service-role client — bypasses RLS. Server-only, never expose to the client. */
 export function createAdminClient() {
   return createSupabaseClient(

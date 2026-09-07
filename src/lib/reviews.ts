@@ -1,4 +1,4 @@
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { createPublicClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Rating } from "@/lib/supabase/types";
 
 export type LatestReview = {
@@ -14,7 +14,7 @@ export type LatestReview = {
 export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
   if (!isSupabaseConfigured) return [];
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from("public_reviews")
       .select("id, rating, comment, created_at, reviewer_first, service_name, staff_name")
@@ -38,7 +38,7 @@ export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
 export async function getOverallRating(): Promise<Rating | null> {
   if (!isSupabaseConfigured) return null;
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase.from("reviews").select("rating");
     if (!data || data.length === 0) return null;
     const sum = data.reduce((a, r) => a + (r as { rating: number }).rating, 0);
@@ -56,7 +56,7 @@ export async function getRatingsMap(
 ): Promise<Record<string, Rating>> {
   if (!isSupabaseConfigured) return {};
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase.from(view).select("*");
     const key = view === "service_ratings" ? "service_id" : "staff_id";
     const out: Record<string, Rating> = {};
@@ -76,7 +76,7 @@ export async function getRatingsMap(
 export async function hasReviewed(appointmentId: string): Promise<boolean> {
   if (!isSupabaseConfigured) return false;
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { count } = await supabase
       .from("reviews")
       .select("id", { count: "exact", head: true })

@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Meet the stylists and barbers at justhairs.",
 };
 
+export const revalidate = 600;
+
 export default async function MastersPage() {
   const [{ staff, staffServices, services, workingHours }, ratings] = await Promise.all([
     getCatalog(),

@@ -15,6 +15,9 @@ import { getCatalog } from "@/lib/queries";
 import { buildMasters } from "@/lib/masters";
 import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
+// Statically generated, refreshed every 10 minutes.
+export const revalidate = 600;
+
 export default async function HomePage() {
   const [{ services, staff, staffServices, workingHours }, reviews, overall, staffRatings] =
     await Promise.all([

@@ -8,8 +8,16 @@ import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
 import { ChipLink } from "@/components/ui/Chip";
 import { formatDuration, formatPrice } from "@/lib/format";
-import { getServiceBySlug, getStaffForService } from "@/lib/queries";
+import { getCatalog, getServiceBySlug, getStaffForService } from "@/lib/queries";
 import { getRatingsMap } from "@/lib/reviews";
+
+export const revalidate = 600;
+
+// Pre-render every service page at build time.
+export async function generateStaticParams() {
+  const { services } = await getCatalog();
+  return services.map((s) => ({ slug: s.slug }));
+}
 
 export async function generateMetadata({
   params,
