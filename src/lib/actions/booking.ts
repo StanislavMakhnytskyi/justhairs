@@ -13,7 +13,9 @@ export type ActionResult<T = undefined> =
 const bookSchema = z.object({
   serviceId: z.string().uuid(),
   staffId: z.string().uuid().nullable(),
-  startsAt: z.string().datetime({ offset: true }),
+  // Any date-parseable string — the slot times come straight from Postgres
+  // (offset + microsecond format), which Zod's strict .datetime() rejects.
+  startsAt: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "bad date"),
 });
 
 /** Hold a slot. No sign-in — the appointment is created with a guest code and
@@ -28,7 +30,7 @@ export async function createBooking(
   const { data, error } = await supabase.rpc("book_appointment", {
     p_service_id: parsed.data.serviceId,
     p_staff_id: parsed.data.staffId,
-    p_starts_at: parsed.data.startsAt,
+    p_starts_at: new Date(parsed.data.startsAt).toISOString(),
   });
 
   if (error) {
@@ -57,6 +59,25 @@ export async function getAvailableSlots(input: {
   });
   // Throw on a real RPC failure so callers can tell "the lookup broke" apart
   // from "this day genuinely has no slots" (an empty array).
+  if (error) throw new Error(error.message || "Could not load availability.");
+  if (!data) return [];
+  return (data as { starts_at: string }[]).map((s) => s.starts_at);
+}
+
+/** Availability for a whole range in one round trip (see migration 0004). */
+export async function getDayAvailability(input: {
+  serviceId: string;
+  staffId: string | null;
+  from: string; // yyyy-MM-dd
+  days: number;
+}): Promise<string[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.rpc("get_day_availability", {
+    p_service_id: input.serviceId,
+    p_staff_id: input.staffId,
+    p_from: input.from,
+    p_days: input.days,
+  });
   if (error) throw new Error(error.message || "Could not load availability.");
   if (!data) return [];
   return (data as { starts_at: string }[]).map((s) => s.starts_at);

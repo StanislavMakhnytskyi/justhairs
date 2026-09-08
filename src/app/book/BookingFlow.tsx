@@ -35,6 +35,7 @@ import { createBooking } from "@/lib/actions/booking";
 import {
   getCachedSlots,
   loadSlots as loadSlotsInto,
+  loadWindow,
   slotCacheKey,
   subscribeSlotCache,
 } from "@/lib/slot-cache";
@@ -169,14 +170,15 @@ export function BookingFlow({
     if (needsSlots) loadSlots(dateStr!, staffId);
   }, [needsSlots, dateStr, staffId, loadSlots]);
 
-  // Warm the cache once we know the service (and staff, if picked) — fetch the
-  // next few open days so the calendar and time grid have no perceptible lag.
+  // Warm the whole date strip in ONE request as soon as we know the service —
+  // the per-day fetches were queueing behind each other and made picking a day
+  // feel slow.
   useEffect(() => {
     if (!service || step < 1) return;
     const sid = staffId ?? "any";
-    for (const day of nextOpenDates(openWeekdays, DATE_WINDOW)) {
-      void loadSlotsInto(service.id, sid, day).catch(() => {});
-    }
+    void loadWindow(service.id, sid, nextOpenDates(openWeekdays, DATE_WINDOW)).catch(
+      () => {},
+    );
   }, [service, staffId, step, openWeekdays]);
 
   // Which of the strip's open days are known to have zero slots — those get
@@ -401,7 +403,11 @@ export function BookingFlow({
                         onClick={() => {
                           setEnteredWithDate(false);
                           setParams(
-                            { date: q.day, time: q.iso, step: "review" },
+                            {
+                              date: q.day,
+                              time: new Date(q.iso).toISOString(),
+                              step: "review",
+                            },
                             { push: true },
                           );
                         }}
