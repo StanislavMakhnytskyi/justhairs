@@ -6,44 +6,72 @@ import { Divider } from "@/components/ui/primitives";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { getAppointment } from "@/lib/appointments";
 
+export const dynamic = "force-dynamic";
+
 export default async function ConfirmationPage({
   params,
-}: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ paid?: string }>;
+}) {
+  const [{ id }, { paid }] = await Promise.all([params, searchParams]);
   const appt = await getAppointment(id);
   if (!appt) notFound();
 
-  const when = formatDateTime(appt.starts_at);
+  const isPaid = appt.payment_status === "paid" || paid === "1";
+  const payLine = isPaid
+    ? "Paid in full"
+    : appt.payment_status === "pay_later"
+      ? "Pay after your visit"
+      : "Payment not completed";
 
   return (
     <AppShell className="items-center justify-center px-gutter py-12 text-center">
       <CheckCircle2 size={56} className="text-success" />
       <h1 className="mt-4 text-title text-text-primary">You&rsquo;re booked</h1>
       <p className="mt-1 text-body text-text-secondary">
-        A confirmation is on its way to your inbox.
+        {appt.customer_email
+          ? `A confirmation is on its way to ${appt.customer_email}.`
+          : "Your appointment is confirmed."}
       </p>
 
       <div className="mt-6 w-full rounded-[var(--radius-md)] bg-surface-card p-4 text-left shadow-[var(--shadow-card)]">
+        {appt.confirmation_code && (
+          <>
+            <p className="text-caption text-text-secondary">Confirmation code</p>
+            <p className="text-heading tracking-[0.2em] text-text-primary">
+              {appt.confirmation_code}
+            </p>
+            <Divider className="my-3" />
+          </>
+        )}
         <p className="text-subhead text-text-primary">{appt.service.name}</p>
         <p className="text-label text-text-secondary">
           {appt.staff?.name ?? "Any specialist"}
         </p>
         <Divider className="my-3" />
-        <p className="text-body text-text-primary">{when}</p>
+        <p className="text-body text-text-primary">{formatDateTime(appt.starts_at)}</p>
         <p className="text-label text-text-secondary">
-          {formatDuration(appt.service.duration_min)} · {formatPrice(appt.price_cents)} —
-          pay after your visit
+          {formatDuration(appt.service.duration_min)} ·{" "}
+          {formatPrice(appt.price_cents)} — {payLine}
         </p>
       </div>
 
       <div className="mt-6 flex w-full flex-col gap-2">
-        <Button href="/account" block>
-          Go to my appointments
-        </Button>
-        <Button href="/" variant="text" block>
+        {appt.payment_status === "unpaid" && (
+          <Button href={`/book/pay/${appt.id}`} block>
+            Complete payment
+          </Button>
+        )}
+        <Button href="/" variant={appt.payment_status === "unpaid" ? "text" : "primary"} block>
           Back to home
         </Button>
       </div>
+
+      <p className="mt-6 text-caption text-text-secondary">
+        Need to change or cancel? Call the salon and quote your code.
+      </p>
     </AppShell>
   );
 }

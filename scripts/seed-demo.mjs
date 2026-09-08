@@ -3,8 +3,9 @@
 //
 //   node --env-file=.env.local scripts/seed-demo.mjs
 //
-// Idempotent: removes the demo users (their appointments/reviews cascade) and
-// recreates everything. Uses the service-role key, so it bypasses RLS.
+// No auth: appointments are guest rows tagged with a *@justhairs.test email.
+// Idempotent — every run deletes those rows (reviews cascade) and recreates
+// them. Uses the service-role key, so it bypasses RLS.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -22,13 +23,14 @@ const supabase = createClient(url, serviceKey, {
 const SALON_TZ = "Europe/Dublin";
 const OPEN_HOUR = 9;
 const CLOSE_HOUR = 18;
+const DEMO_EMAIL = "@justhairs.test";
 
 const DEMO = [
-  { email: "demo@justhairs.test", name: "Demo Client" },
-  { email: "john.smith@justhairs.test", name: "John Smith" },
-  { email: "maria.g@justhairs.test", name: "Maria Gomez" },
-  { email: "alex.k@justhairs.test", name: "Alex Kelly" },
-  { email: "sara.b@justhairs.test", name: "Sara Byrne" },
+  { email: "demo@justhairs.test", name: "Demo Client", phone: "+353 1 000 0001" },
+  { email: "john.smith@justhairs.test", name: "John Smith", phone: "+353 1 000 0002" },
+  { email: "maria.g@justhairs.test", name: "Maria Gomez", phone: "+353 1 000 0003" },
+  { email: "alex.k@justhairs.test", name: "Alex Kelly", phone: "+353 1 000 0004" },
+  { email: "sara.b@justhairs.test", name: "Sara Byrne", phone: "+353 1 000 0005" },
 ];
 
 const COMMENTS = [
@@ -55,19 +57,6 @@ function salonTime(dayStr, minutes) {
   return new Date(guess.getTime() + (guess.getTime() - shown.getTime()));
 }
 
-async function findOrCreateUser(email, name) {
-  const { data: list } = await supabase.auth.admin.listUsers({ perPage: 200 });
-  const existing = list?.users.find((u) => u.email === email);
-  if (existing) await supabase.auth.admin.deleteUser(existing.id);
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { full_name: name },
-  });
-  if (error) throw error;
-  return data.user.id;
-}
-
 async function main() {
   const [{ data: services }, { data: links }, { data: staff }, { data: hours }] =
     await Promise.all([
@@ -91,17 +80,14 @@ async function main() {
   const worksOn = (staffId, weekday) =>
     hours.some((h) => h.staff_id === staffId && h.weekday === weekday);
 
-  // 1. Users
-  const uids = [];
-  for (const person of DEMO) {
-    uids.push(await findOrCreateUser(person.email, person.name));
-  }
+  // 1. Wipe previous demo rows (reviews cascade on appointment delete).
+  await supabase.from("appointments").delete().like("customer_email", `%${DEMO_EMAIL}`);
 
   // 2. Past visits + reviews
   let past = 0;
   let reviews = 0;
   for (let p = 0; p < DEMO.length; p++) {
-    const uid = uids[p];
+    const person = DEMO[p];
     const visitCount = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < visitCount; i++) {
       const service = rand(services);
@@ -116,14 +102,16 @@ async function main() {
       const { data: appt, error } = await supabase
         .from("appointments")
         .insert({
-          customer_id: uid,
+          customer_name: person.name,
+          customer_email: person.email,
+          customer_phone: person.phone,
           service_id: service.id,
           staff_id: staffId,
           starts_at: start.toISOString(),
           ends_at: end.toISOString(),
           status: "completed",
           price_cents: service.price_cents,
-          created_by: uid,
+          payment_status: "paid",
         })
         .select("id")
         .single();
@@ -131,11 +119,10 @@ async function main() {
       past++;
 
       const leaveUnreviewed =
-        DEMO[p].email === "demo@justhairs.test" && i === visitCount - 1;
+        person.email === "demo@justhairs.test" && i === visitCount - 1;
       if (!leaveUnreviewed && Math.random() < 0.8) {
         const { error: rErr } = await supabase.from("reviews").insert({
           appointment_id: appt.id,
-          customer_id: uid,
           service_id: service.id,
           staff_id: staffId,
           rating: Math.random() < 0.75 ? 5 : 4,
@@ -170,8 +157,11 @@ async function main() {
         const inFuture = startAt.getTime() > Date.now() + 30 * 60_000;
 
         if (fits && inFuture && Math.random() < fill) {
+          const person = rand(DEMO);
           rows.push({
-            customer_id: rand(uids),
+            customer_name: person.name,
+            customer_email: person.email,
+            customer_phone: person.phone,
             service_id: service.id,
             staff_id: s.id,
             starts_at: startAt.toISOString(),
@@ -180,7 +170,7 @@ async function main() {
             ).toISOString(),
             status: "confirmed",
             price_cents: service.price_cents,
-            created_by: rand(uids),
+            payment_status: rand(["paid", "pay_later"]),
           });
           cursor += Math.ceil(service.duration_min / 30) * 30; // skip consumed slots
         } else {

@@ -1,8 +1,4 @@
-import {
-  createClient,
-  createPublicClient,
-  isSupabaseConfigured,
-} from "@/lib/supabase/server";
+import { createPublicClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
 
 export type ServiceWithCategory = Service & { category: ServiceCategory };
@@ -101,24 +97,5 @@ export async function getOpenWeekdays(): Promise<number[]> {
     return set.length ? set : fallback;
   } catch {
     return fallback;
-  }
-}
-
-export async function getCurrentProfile() {
-  if (!isSupabaseConfigured) return null;
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-    return data ?? null;
-  } catch {
-    return null;
   }
 }

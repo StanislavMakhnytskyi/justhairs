@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/server";
 
-// Signature-verified skeleton. Milestone 2 will mark orders/payments paid here.
+// Marks an appointment paid once Stripe confirms the Checkout session.
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!stripe || !secret) {
@@ -24,14 +25,22 @@ export async function POST(req: Request) {
     );
   }
 
-  switch (event.type) {
-    case "checkout.session.completed":
-    case "payment_intent.succeeded":
-      // TODO(M2): look up order by metadata, set status = 'paid', insert payment row.
-      console.info(`[stripe] received ${event.type}`, event.id);
-      break;
-    default:
-      console.info(`[stripe] unhandled ${event.type}`);
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const appointmentId = session.metadata?.appointment_id;
+    if (appointmentId && session.payment_status === "paid") {
+      const { error } = await createAdminClient()
+        .from("appointments")
+        .update({ payment_status: "paid" })
+        .eq("id", appointmentId);
+      if (error) {
+        console.error(`[stripe] failed to mark ${appointmentId} paid`, error);
+        return NextResponse.json({ error: "db update failed" }, { status: 500 });
+      }
+      console.info(`[stripe] appointment ${appointmentId} paid`);
+    }
+  } else {
+    console.info(`[stripe] unhandled ${event.type}`);
   }
 
   return NextResponse.json({ received: true });

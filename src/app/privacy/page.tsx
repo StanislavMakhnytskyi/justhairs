@@ -26,44 +26,40 @@ export default function PrivacyPage() {
           </p>
 
           <h2>2. What we collect</h2>
-          <p>When you sign in, we store the minimum needed to run the demo:</p>
+          <p>There are no user accounts. When you make a booking we store:</p>
           <ul>
-            <li>
-              your name and email address (from Google sign-in or the email you enter),
-            </li>
-            <li>
-              optional profile details you choose to add (phone, birthday, preferred
-              stylist, notification preference),
-            </li>
-            <li>the demo appointments and reviews you create in the app.</li>
+            <li>the name, email and phone number you enter to hold the appointment,</li>
+            <li>the demo appointment itself (service, stylist, time).</li>
           </ul>
           <p>
-            We do <strong>not</strong> collect payment card details. No real payments
-            are processed.
+            Card details are handled entirely by{" "}
+            <a href="https://stripe.com" target="_blank" rel="noreferrer">
+              Stripe
+            </a>{" "}
+            in <strong>test mode</strong> and never touch this app&rsquo;s servers or
+            database. No real money moves.
           </p>
 
           <h2>3. How it is stored</h2>
           <p>
-            Data is held in a{" "}
+            Bookings are held in a{" "}
             <a href="https://supabase.com" target="_blank" rel="noreferrer">
               Supabase
             </a>{" "}
-            (PostgreSQL) database and authenticated through Supabase Auth. Anonymous,
-            aggregate page-view counts are collected via Vercel Web Analytics (no
-            cookies, no personal identifiers).
+            (PostgreSQL) database. Anonymous, aggregate page-view counts are
+            collected via Vercel Web Analytics (no cookies, no personal identifiers).
           </p>
 
           <h2>4. Sharing</h2>
           <p>
             We do not sell or share your data. It is processed only by the
-            infrastructure providers above (Supabase, Vercel, and Google for sign-in)
-            to operate the demo.
+            infrastructure providers above (Supabase, Vercel, and Stripe for test
+            payments) to operate the demo.
           </p>
 
           <h2>5. Your choices</h2>
           <p>
-            You can edit your profile in the app, sign out at any time, or request
-            deletion of your account and associated data by contacting{" "}
+            To have a booking and its contact details deleted, contact{" "}
             <a href={`mailto:${LEGAL_CONTACT}`}>{LEGAL_CONTACT}</a>.
           </p>
 

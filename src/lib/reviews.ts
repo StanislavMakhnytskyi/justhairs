@@ -72,17 +72,3 @@ export async function getRatingsMap(
     return {};
   }
 }
-
-export async function hasReviewed(appointmentId: string): Promise<boolean> {
-  if (!isSupabaseConfigured) return false;
-  try {
-    const supabase = createPublicClient();
-    const { count } = await supabase
-      .from("reviews")
-      .select("id", { count: "exact", head: true })
-      .eq("appointment_id", appointmentId);
-    return (count ?? 0) > 0;
-  } catch {
-    return false;
-  }
-}

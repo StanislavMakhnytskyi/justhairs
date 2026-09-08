@@ -1,48 +1,30 @@
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
-import type { Appointment, Review, Service, Staff } from "@/lib/supabase/types";
+import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import type { Appointment, Service, Staff } from "@/lib/supabase/types";
 
 export type AppointmentDetail = Appointment & {
   service: Pick<Service, "id" | "name" | "slug" | "duration_min">;
   staff: Pick<Staff, "id" | "name" | "title"> | null;
-  review: Pick<Review, "rating" | "comment"> | null;
 };
 
 const SELECT =
-  "*, service:services(id,name,slug,duration_min), staff:staff(id,name,title), review:reviews(rating,comment)";
+  "*, service:services(id,name,slug,duration_min), staff:staff(id,name,title)";
 
-function normalize(row: Record<string, unknown>): AppointmentDetail {
-  const review = row.review;
-  return {
-    ...(row as unknown as AppointmentDetail),
-    review: Array.isArray(review) ? (review[0] ?? null) : (review ?? null),
-  };
-}
-
+/**
+ * One appointment by id, for the payment + confirmation pages. Appointments
+ * carry the guest's contact details, so this uses the service-role key (anon
+ * has no read access) — only ever called server-side with an id from the URL.
+ */
 export async function getAppointment(id: string) {
   if (!isSupabaseConfigured) return null;
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data } = await supabase
       .from("appointments")
       .select(SELECT)
       .eq("id", id)
       .maybeSingle();
-    return data ? normalize(data as Record<string, unknown>) : null;
+    return (data as AppointmentDetail | null) ?? null;
   } catch {
     return null;
-  }
-}
-
-export async function listMyAppointments() {
-  if (!isSupabaseConfigured) return [];
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("appointments")
-      .select(SELECT)
-      .order("starts_at", { ascending: true });
-    return (data ?? []).map((r) => normalize(r as Record<string, unknown>));
-  } catch {
-    return [];
   }
 }

@@ -42,7 +42,6 @@ import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
 
 const STEPS = ["Service", "Specialist", "Date & time", "Review"];
-const PENDING_KEY = "justhairs:pending-booking";
 /** Open days to prefetch — covers the date strip so empty days can be disabled. */
 const DATE_WINDOW = 14;
 
@@ -55,14 +54,11 @@ function formatQuickPick(iso: string): string {
   return `${weekday} ${formatSlotTime(iso)}`;
 }
 
-type Pending = { service: string; staff: string; date: string; time: string };
-
 type Props = {
   services: ServiceWithCategory[];
   staff: Staff[];
   staffServices: { staff_id: string; service_id: string }[];
   openWeekdays: number[];
-  isAuthed: boolean;
 };
 
 export function BookingFlow({
@@ -70,7 +66,6 @@ export function BookingFlow({
   staff,
   staffServices,
   openWeekdays,
-  isAuthed,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -260,11 +255,6 @@ export function BookingFlow({
       .slice(0, 3);
   }, [slotSnapshot, openWeekdays]);
 
-  // Warm the confirmation route while the user is on the review step.
-  useEffect(() => {
-    if (step === 3) router.prefetch("/book/confirmation/pending");
-  }, [step, router]);
-
   // If a service has exactly one eligible stylist, there's nothing to choose —
   // skip the specialist step. `replace` (not push) so Back lands on the service
   // list rather than looping through this step.
@@ -284,64 +274,22 @@ export function BookingFlow({
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [step]);
 
-  // If the sign-in round-trip dropped the query string, restore the booking the
-  // user was about to confirm from sessionStorage.
-  useEffect(() => {
-    if (serviceSlug) return;
-    try {
-      const raw = sessionStorage.getItem(PENDING_KEY);
-      if (!raw) return;
-      const p = JSON.parse(raw) as Pending;
-      sessionStorage.removeItem(PENDING_KEY);
-      if (p.service && p.time) {
-        setParams({
-          service: p.service,
-          staff: p.staff || "any",
-          date: p.date,
-          time: p.time,
-          step: "review",
-        });
-      }
-    } catch {
-      /* ignore malformed storage */
-    }
-  }, [serviceSlug, setParams]);
-
   function goBack() {
     // Forward step transitions were pushed, so Back walks them.
     if (step > 0) router.back();
     else router.push("/");
   }
 
-  async function confirm() {
+  function confirm() {
     if (!service || !time) return;
     setError(null);
-    if (!isAuthed) {
-      try {
-        sessionStorage.setItem(
-          PENDING_KEY,
-          JSON.stringify({
-            service: serviceSlug,
-            staff: staffId,
-            date: dateStr,
-            time,
-          }),
-        );
-      } catch {
-        /* storage unavailable — the next param below still carries state */
-      }
-      router.push(
-        `/login?next=${encodeURIComponent(`${pathname}?${params.toString()}`)}`,
-      );
-      return;
-    }
     startTransition(async () => {
       const res = await createBooking({
         serviceId: service.id,
         staffId: staffId === "any" || !staffId ? null : staffId,
         startsAt: time,
       });
-      if (res.ok) router.push(`/book/confirmation/${res.data.id}`);
+      if (res.ok) router.push(`/book/pay/${res.data.id}`);
       else setError(res.error);
     });
   }
@@ -497,8 +445,7 @@ export function BookingFlow({
         )}
 
         {step === 3 && service && time && (
-          <SummaryList
-            footnote="Pay after your visit. Free cancellation up to 24 hours before.">
+          <SummaryList footnote="Next: add your details and choose how to pay.">
             <SummaryRow
               label="Service"
               value={`${service.name} · ${service.category.name}`}
@@ -517,7 +464,7 @@ export function BookingFlow({
       {step === 3 && service && (
         <StickyBar label="Total" value={formatPrice(service.price_cents)}>
           <Button onClick={confirm} loading={pending} className="shrink-0">
-            {isAuthed ? "Confirm booking" : "Sign in to confirm"}
+            Confirm booking
           </Button>
         </StickyBar>
       )}

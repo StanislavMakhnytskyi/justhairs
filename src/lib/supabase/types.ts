@@ -9,7 +9,7 @@ export type AppointmentStatus =
   | "no_show";
 
 export type CategoryGender = "men" | "women" | "unisex";
-export type UserRole = "customer" | "admin";
+export type PaymentStatus = "unpaid" | "pay_later" | "paid";
 
 export interface ServiceCategory {
   id: string;
@@ -44,23 +44,12 @@ export interface Staff {
   active: boolean;
 }
 
-export interface Profile {
-  id: string;
-  full_name: string | null;
-  phone: string | null;
-  phone_verified: boolean;
-  email: string | null;
-  birthday: string | null;
-  gender: string | null;
-  preferred_staff_id: string | null;
-  notification_prefs: Record<string, boolean>;
-  role: UserRole;
-  created_at: string;
-}
-
 export interface Appointment {
   id: string;
-  customer_id: string;
+  customer_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
   service_id: string;
   staff_id: string | null;
   starts_at: string;
@@ -68,7 +57,9 @@ export interface Appointment {
   status: AppointmentStatus;
   price_cents: number;
   cancellation_reason: string | null;
-  created_by: string | null;
+  confirmation_code: string | null;
+  payment_status: PaymentStatus;
+  stripe_session_id: string | null;
   created_at: string;
 }
 
@@ -98,7 +89,6 @@ type Row<T> = { Row: T; Insert: Partial<T>; Update: Partial<T>; Relationships: [
 export interface Database {
   public: {
     Tables: {
-      profiles: Row<Profile>;
       service_categories: Row<ServiceCategory>;
       services: Row<Service>;
       staff: Row<Staff>;
@@ -129,20 +119,10 @@ export interface Database {
         Args: { p_service_id: string; p_staff_id: string | null; p_starts_at: string };
         Returns: Appointment;
       };
-      reschedule_appointment: {
-        Args: { p_appointment_id: string; p_staff_id: string | null; p_starts_at: string };
-        Returns: Appointment;
-      };
-      cancel_appointment: {
-        Args: { p_appointment_id: string; p_reason: string | null };
-        Returns: Appointment;
-      };
-      is_admin: { Args: Record<string, never>; Returns: boolean };
     };
     Enums: {
       appointment_status: AppointmentStatus;
       category_gender: CategoryGender;
-      user_role: UserRole;
     };
     CompositeTypes: Record<string, never>;
   };
