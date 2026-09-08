@@ -23,8 +23,8 @@ export default async function DashboardPage() {
   const toReview = appointments.filter((a) => a.status === "completed" && !a.review);
 
   return (
-    <div className="p-6">
-      <h1 className="text-[24px] font-bold tracking-tight text-text-primary">
+    <div className="p-gutter">
+      <h1 className="text-title text-text-primary">
         Hi{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
       </h1>
 
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         <SectionHeader
           title="Next appointment"
           action={
-            <Link href="/account/appointments" className="text-[13px] font-bold text-link">
+            <Link href="/account/appointments" className="text-label font-bold text-link">
               All
             </Link>
           }

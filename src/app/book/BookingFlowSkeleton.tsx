@@ -8,11 +8,11 @@ import { Skeleton, SkeletonList } from "@/components/ui/Skeleton";
 export function BookingFlowSkeleton() {
   return (
     <AppShell>
-      <div className="flex h-14 items-center gap-2 border-b border-border-default px-4">
+      <div className="flex h-14 items-center gap-2 border-b border-border-default px-gutter">
         <Skeleton className="h-6 w-6 rounded-full" />
         <Skeleton className="h-4 w-40" />
       </div>
-      <div className="flex gap-2 p-4">
+      <div className="flex gap-2 p-gutter">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex-1 space-y-2">
             <Skeleton className="h-1 rounded-full" />
@@ -20,7 +20,7 @@ export function BookingFlowSkeleton() {
           </div>
         ))}
       </div>
-      <div className="px-4 pb-4">
+      <div className="px-gutter pb-4">
         <SkeletonList rows={5} />
       </div>
     </AppShell>

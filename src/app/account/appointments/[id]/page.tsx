@@ -26,7 +26,7 @@ export default async function AppointmentDetailPage({
   return (
     <div>
       <TopBar title="Appointment" />
-      <div className="p-6">
+      <div className="p-gutter">
         <SummaryList
           footnote="Free cancellation up to 24 hours before your appointment. After that a €20 cancellation fee applies."
         >
@@ -61,10 +61,10 @@ export default async function AppointmentDetailPage({
 
         {appt.review && (
           <Card className="mt-4">
-            <p className="text-[14px] font-bold text-text-primary">Your review</p>
+            <p className="text-subhead text-text-primary">Your review</p>
             <StarRating value={appt.review.rating} className="mt-1" />
             {appt.review.comment && (
-              <p className="mt-2 text-[14px] text-text-primary">
+              <p className="mt-2 text-body text-text-primary">
                 &ldquo;{appt.review.comment}&rdquo;
               </p>
             )}

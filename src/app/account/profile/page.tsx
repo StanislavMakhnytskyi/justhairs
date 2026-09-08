@@ -10,7 +10,7 @@ export default async function ProfilePage() {
   return (
     <div>
       <TopBar title="Profile" />
-      <div className="p-6">
+      <div className="p-gutter">
         <ProfileForm
           profile={profile}
           staff={staff.map((s) => ({ id: s.id, name: s.name }))}

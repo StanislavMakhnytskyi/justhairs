@@ -5,7 +5,7 @@ export default function PaymentsPage() {
   return (
     <div>
       <TopBar title="Payments" />
-      <div className="p-6">
+      <div className="p-gutter">
         <EmptyState
           title="Payments are coming soon"
           description="Stripe checkout and payment history arrive with orders."

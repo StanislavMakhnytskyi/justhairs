@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { SelectField } from "@/components/ui/SelectField";
+import { Switch } from "@/components/ui/Switch";
 import { Divider } from "@/components/ui/primitives";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { updateProfile, signOut } from "@/lib/actions/profile";
@@ -64,39 +66,41 @@ export function ProfileForm({
         onChange={(e) => setForm({ ...form, birthday: e.target.value })}
       />
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-bold text-text-primary">Preferred stylist</span>
-        <select
-          className="h-12 rounded-[var(--radius-sm)] border border-border-strong bg-surface-card px-4 text-[15px] text-text-primary"
-          value={form.preferred_staff_id}
-          onChange={(e) => setForm({ ...form, preferred_staff_id: e.target.value })}
-        >
-          <option value="">No preference</option>
-          {staff.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SelectField
+        label="Preferred stylist"
+        value={form.preferred_staff_id}
+        onChange={(e) => setForm({ ...form, preferred_staff_id: e.target.value })}
+      >
+        <option value="">No preference</option>
+        {staff.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </SelectField>
 
       <Divider className="my-2" />
 
-      <Toggle
-        label="Email reminders"
-        checked={form.email_notif}
-        onChange={(v) => setForm({ ...form, email_notif: v })}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <span id="email-reminders" className="text-body text-text-primary">
+          Email reminders
+        </span>
+        <Switch
+          aria-labelledby="email-reminders"
+          checked={form.email_notif}
+          onChange={(v) => setForm({ ...form, email_notif: v })}
+        />
+      </div>
 
       <Divider className="my-2" />
 
-      <div className="flex items-center gap-2 text-[13px] text-text-secondary">
+      <div className="flex items-center gap-2 text-label text-text-secondary">
         <CheckCircle2 size={16} className="text-success" />
         Signed in{profile.email ? ` as ${profile.email}` : ""}
       </div>
       <ThemeToggle />
 
-      {saved && <p className="text-[13px] text-success">Saved.</p>}
+      {saved && <p className="text-label text-success">Saved.</p>}
       <Button type="submit" block loading={pending}>
         Save changes
       </Button>
@@ -115,27 +119,5 @@ export function ProfileForm({
         Sign out
       </Button>
     </form>
-  );
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between">
-      <span className="text-[14px] text-text-primary">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 accent-[var(--brand)]"
-      />
-    </label>
   );
 }

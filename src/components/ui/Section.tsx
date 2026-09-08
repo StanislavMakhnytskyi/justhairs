@@ -1,29 +1,24 @@
 import { cn } from "@/lib/cn";
+import { SectionHeader } from "./primitives";
 
 /** A page section: consistent gutters + an optional header with a trailing action. */
 export function Section({
   title,
   action,
+  compact,
   className,
   children,
 }: {
   title?: string;
   action?: React.ReactNode;
+  /** Tighter vertical padding — for short one-line sections. */
+  compact?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("px-6 py-6", className)}>
-      {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          {title && (
-            <h2 className="text-[19px] font-bold tracking-tight text-text-primary">
-              {title}
-            </h2>
-          )}
-          {action}
-        </div>
-      )}
+    <section className={cn("px-gutter", compact ? "py-4" : "py-6", className)}>
+      {(title || action) && <SectionHeader title={title} action={action} />}
       {children}
     </section>
   );

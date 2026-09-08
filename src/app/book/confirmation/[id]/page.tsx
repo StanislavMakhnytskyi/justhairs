@@ -16,23 +16,21 @@ export default async function ConfirmationPage({
   const when = formatDateTime(appt.starts_at);
 
   return (
-    <AppShell className="items-center justify-center px-6 py-12 text-center">
+    <AppShell className="items-center justify-center px-gutter py-12 text-center">
       <CheckCircle2 size={56} className="text-success" />
-      <h1 className="mt-4 text-[24px] font-bold tracking-tight text-text-primary">
-        You&rsquo;re booked
-      </h1>
-      <p className="mt-1 text-[14px] text-text-secondary">
+      <h1 className="mt-4 text-title text-text-primary">You&rsquo;re booked</h1>
+      <p className="mt-1 text-body text-text-secondary">
         A confirmation is on its way to your inbox.
       </p>
 
       <div className="mt-6 w-full rounded-[var(--radius-md)] bg-surface-card p-4 text-left shadow-[var(--shadow-card)]">
-        <p className="text-[16px] font-bold text-text-primary">{appt.service.name}</p>
-        <p className="text-[13px] text-text-secondary">
+        <p className="text-subhead text-text-primary">{appt.service.name}</p>
+        <p className="text-label text-text-secondary">
           {appt.staff?.name ?? "Any specialist"}
         </p>
         <Divider className="my-3" />
-        <p className="text-[14px] text-text-primary">{when}</p>
-        <p className="text-[13px] text-text-secondary">
+        <p className="text-body text-text-primary">{when}</p>
+        <p className="text-label text-text-secondary">
           {formatDuration(appt.service.duration_min)} · {formatPrice(appt.price_cents)} —
           pay after your visit
         </p>

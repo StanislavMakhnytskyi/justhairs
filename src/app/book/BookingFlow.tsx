@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -22,14 +23,35 @@ import { ShopService } from "@/components/ui/ShopService";
 import { StaffCard } from "@/components/ui/StaffCard";
 import { DateStrip } from "@/components/ui/DateStrip";
 import { SlotGrid, SlotGridSkeleton } from "@/components/ui/SlotGrid";
-import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
+import {
+  formatDateTime,
+  formatDuration,
+  formatPrice,
+  formatSlotTime,
+  SALON_TZ,
+} from "@/lib/format";
 import { dayTimeGrid, nextOpenDates } from "@/lib/salon";
-import { createBooking, getAvailableSlots } from "@/lib/actions/booking";
+import { createBooking } from "@/lib/actions/booking";
+import {
+  getCachedSlots,
+  loadSlots as loadSlotsInto,
+  slotCacheKey,
+  subscribeSlotCache,
+} from "@/lib/slot-cache";
 import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
 
 const STEPS = ["Service", "Specialist", "Date & time", "Review"];
 const PENDING_KEY = "justhairs:pending-booking";
+
+/** "Thu 10:00" — for the next-available quick picks. */
+function formatQuickPick(iso: string): string {
+  const weekday = new Date(iso).toLocaleDateString("en-IE", {
+    weekday: "short",
+    timeZone: SALON_TZ,
+  });
+  return `${weekday} ${formatSlotTime(iso)}`;
+}
 
 type Pending = { service: string; staff: string; date: string; time: string };
 
@@ -94,55 +116,40 @@ export function BookingFlow({
   })();
 
   const setParams = useCallback(
-    (patch: Record<string, string | null>) => {
+    (patch: Record<string, string | null>, opts?: { push?: boolean }) => {
       const next = new URLSearchParams(params.toString());
       for (const [k, v] of Object.entries(patch)) {
         if (v === null) next.delete(k);
         else next.set(k, v);
       }
-      router.replace(`${pathname}?${next.toString()}`);
+      const url = `${pathname}?${next.toString()}`;
+      // Step transitions push (so hardware Back walks the steps); in-place value
+      // edits replace.
+      if (opts?.push) router.push(url);
+      else router.replace(url);
     },
     [params, pathname, router],
   );
 
-  // Client-side cache of slot lookups, keyed by staff+day, so re-visiting a
-  // date (or a date we prefetched) is instant.
-  const slotCache = useRef(new Map<string, string[]>());
-  const cacheKey = (sid: string | null, day: string) => `${sid ?? "any"}:${day}`;
-
-  const fetchSlots = useCallback(
-    async (day: string, sid: string | null): Promise<string[]> => {
-      if (!service) return [];
-      const key = cacheKey(sid, day);
-      const hit = slotCache.current.get(key);
-      if (hit) return hit;
-      const result = await getAvailableSlots({
-        serviceId: service.id,
-        staffId: sid === "any" || !sid ? null : sid,
-        day,
-      });
-      slotCache.current.set(key, result);
-      return result;
-    },
-    [service],
-  );
-
+  // Slot lookups live in a shared external store (src/lib/slot-cache) so the
+  // "next available" quick picks below can read them during render. Show the
+  // grid for the chosen day, from cache when we have it.
   const loadSlots = useCallback(
     (day: string, sid: string | null) => {
       if (!service) return;
-      const cached = slotCache.current.get(cacheKey(sid, day));
-      if (cached) {
-        setSlots(cached);
-        setLoadingSlots(false);
-        return;
-      }
+      const cached = getCachedSlots(slotCacheKey(service.id, sid, day));
       startTransition(async () => {
+        if (cached) {
+          setSlots(cached);
+          setLoadingSlots(false);
+          return;
+        }
         setLoadingSlots(true);
-        setSlots(await fetchSlots(day, sid));
+        setSlots(await loadSlotsInto(service.id, sid, day));
         setLoadingSlots(false);
       });
     },
-    [service, fetchSlots],
+    [service],
   );
 
   // Load slots when arriving with a date already in the URL (deep link / back-nav).
@@ -151,21 +158,52 @@ export function BookingFlow({
     if (needsSlots) loadSlots(dateStr!, staffId);
   }, [needsSlots, dateStr, staffId, loadSlots]);
 
-  // Warm the cache: as soon as we know the service (and staff, if picked),
-  // fetch slots for the next few open days in the background so the calendar
-  // and time grid have no perceptible lag.
+  // Warm the cache once we know the service (and staff, if picked) — fetch the
+  // next few open days so the calendar and time grid have no perceptible lag.
   useEffect(() => {
     if (!service || step < 1) return;
     const sid = staffId ?? "any";
     for (const day of nextOpenDates(openWeekdays, 5)) {
-      void fetchSlots(day, sid);
+      void loadSlotsInto(service.id, sid, day);
     }
-  }, [service, staffId, step, openWeekdays, fetchSlots]);
+  }, [service, staffId, step, openWeekdays]);
+
+  // Earliest few bookable times, from the warm cache — quick picks on the date
+  // step so a user needn't poke every day.
+  const slotSnapshot = useSyncExternalStore(
+    subscribeSlotCache,
+    () => {
+      if (!service || step !== 2 || dateStr) return "";
+      const sid = staffId ?? "any";
+      return nextOpenDates(openWeekdays, 5)
+        .map((d) => getCachedSlots(slotCacheKey(service.id, sid, d))?.[0] ?? "")
+        .join("|");
+    },
+    () => "",
+  );
+  const quickPicks = useMemo(() => {
+    if (!slotSnapshot) return [];
+    const days = nextOpenDates(openWeekdays, 5);
+    return slotSnapshot
+      .split("|")
+      .map((iso, i) => ({ day: days[i], iso }))
+      .filter((q) => q.iso)
+      .slice(0, 3);
+  }, [slotSnapshot, openWeekdays]);
 
   // Warm the confirmation route while the user is on the review step.
   useEffect(() => {
     if (step === 3) router.prefetch("/book/confirmation/pending");
   }, [step, router]);
+
+  // If a service has exactly one eligible stylist, there's nothing to choose —
+  // skip the specialist step. `replace` (not push) so Back lands on the service
+  // list rather than looping through this step.
+  useEffect(() => {
+    if (step === 1 && service && !staffId && eligibleStaff.length === 1) {
+      setParams({ staff: eligibleStaff[0].id, time: null, step: "date" });
+    }
+  }, [step, service, staffId, eligibleStaff, setParams]);
 
   // Moving between steps should start you at the top, but not on first paint
   // (a deep link may point at a specific step already).
@@ -200,12 +238,9 @@ export function BookingFlow({
     }
   }, [serviceSlug, setParams]);
 
-  function goToStep(i: number) {
-    setParams({ step: STEPS[i].toLowerCase().split(" ")[0] });
-  }
-
   function goBack() {
-    if (step > 0) goToStep(step - 1);
+    // Forward step transitions were pushed, so Back walks them.
+    if (step > 0) router.back();
     else router.push("/");
   }
 
@@ -252,13 +287,13 @@ export function BookingFlow({
   return (
     <AppShell>
       <TopBar title="Book appointment" onBack={goBack} />
-      <div className="p-4">
+      <div className="p-gutter">
         <StepTabs steps={STEPS} current={step} />
       </div>
 
       <div
         key={step}
-        className="flex flex-1 flex-col px-4 pb-4 motion-safe:animate-fade-in-up"
+        className="flex flex-1 flex-col px-gutter pb-4 motion-safe:animate-fade-in-up"
       >
         {step === 0 && (
           <Stack gap="sm">
@@ -271,15 +306,17 @@ export function BookingFlow({
                 description={s.description}
                 photoUrl={s.photo_url}
                 selected={s.slug === serviceSlug}
-                action={s.slug === serviceSlug ? "Selected" : "Select"}
                 onClick={() =>
-                  setParams({
-                    service: s.slug,
-                    staff: null,
-                    date: null,
-                    time: null,
-                    step: "specialist",
-                  })
+                  setParams(
+                    {
+                      service: s.slug,
+                      staff: null,
+                      date: null,
+                      time: null,
+                      step: "specialist",
+                    },
+                    { push: true },
+                  )
                 }
               />
             ))}
@@ -294,7 +331,7 @@ export function BookingFlow({
                 subtitle="First available"
                 selected={staffId === "any"}
                 onClick={() => {
-                  setParams({ staff: "any", time: null, step: "date" });
+                  setParams({ staff: "any", time: null, step: "date" }, { push: true });
                   if (dateStr) loadSlots(dateStr, "any");
                 }}
               />
@@ -307,7 +344,7 @@ export function BookingFlow({
                 photoUrl={s.photo_url}
                 selected={staffId === s.id}
                 onClick={() => {
-                  setParams({ staff: s.id, time: null, step: "date" });
+                  setParams({ staff: s.id, time: null, step: "date" }, { push: true });
                   if (dateStr) loadSlots(dateStr, s.id);
                 }}
               />
@@ -327,7 +364,32 @@ export function BookingFlow({
               }}
             />
             {!dateStr ? (
-              <Hint>Pick a day to see open times.</Hint>
+              <div className="flex flex-col gap-3">
+                {quickPicks.length > 0 && (
+                  <div
+                    role="group"
+                    aria-label="Next available"
+                    className="flex flex-wrap gap-2"
+                  >
+                    {quickPicks.map((q) => (
+                      <button
+                        key={q.iso}
+                        type="button"
+                        onClick={() =>
+                          setParams(
+                            { date: q.day, time: q.iso, step: "review" },
+                            { push: true },
+                          )
+                        }
+                        className="rounded-[var(--radius-pill)] border border-border-strong bg-surface-card px-3 py-1.5 text-label font-bold text-text-primary transition-[color,border-color] duration-150 ease-[var(--ease-out)] hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
+                      >
+                        {formatQuickPick(q.iso)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Hint>Pick a day to see open times.</Hint>
+              </div>
             ) : loadingSlots || slots === null ? (
               <SlotGridSkeleton />
             ) : availableSet.size === 0 ? (
@@ -338,7 +400,10 @@ export function BookingFlow({
                 available={availableSet}
                 value={timeMs}
                 onChange={(t) =>
-                  setParams({ time: new Date(t).toISOString(), step: "review" })
+                  setParams(
+                    { time: new Date(t).toISOString(), step: "review" },
+                    { push: true },
+                  )
                 }
               />
             )}
@@ -359,7 +424,7 @@ export function BookingFlow({
           </SummaryList>
         )}
         {step === 3 && error && (
-          <p className="mt-3 text-[13px] text-error">{error}</p>
+          <p className="mt-3 text-label text-error">{error}</p>
         )}
       </div>
 

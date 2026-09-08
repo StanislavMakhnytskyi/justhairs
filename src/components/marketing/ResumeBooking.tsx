@@ -32,8 +32,8 @@ export function ResumeBooking() {
   if (!show) return null;
 
   return (
-    <div className="mx-6 mt-6 flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-brand-subtle px-4 py-3">
-      <p className="text-[13px] font-bold text-brand">You have a booking to finish</p>
+    <div className="mx-gutter mt-6 flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-brand-subtle px-4 py-3">
+      <p className="text-label font-bold text-brand">You have a booking to finish</p>
       <Button size="sm" onClick={() => router.push("/book")}>
         Continue
       </Button>

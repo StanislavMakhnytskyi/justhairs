@@ -13,11 +13,9 @@ export default function TermsPage() {
   return (
     <AppShell>
       <TopBar title="Terms of Service" />
-      <div className="p-6">
+      <div className="p-gutter">
         <Prose>
-          <p className="text-[13px] text-text-secondary">
-            Last updated 7 September 2026
-          </p>
+          <p className="text-label text-text-secondary">Last updated 7 September 2026</p>
 
           <h2>1. Demonstration only</h2>
           <p>

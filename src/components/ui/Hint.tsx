@@ -11,7 +11,7 @@ export function Hint({
   return (
     <p
       className={cn(
-        "rounded-[var(--radius-md)] bg-surface-sunken px-4 py-6 text-center text-[13px] text-text-secondary",
+        "rounded-[var(--radius-md)] bg-surface-sunken px-4 py-6 text-center text-label text-text-secondary",
         className,
       )}
     >

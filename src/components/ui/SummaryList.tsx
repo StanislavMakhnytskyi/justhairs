@@ -12,12 +12,12 @@ export function SummaryRow({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="text-[13px] text-text-secondary">{label}</span>
+      <span className="text-label text-text-secondary">{label}</span>
       <span
         className={
           strong
-            ? "text-right text-[16px] font-bold text-text-primary"
-            : "text-right text-[14px] font-medium text-text-primary"
+            ? "text-right text-subhead text-text-primary"
+            : "text-right text-body font-medium text-text-primary"
         }
       >
         {value}
@@ -44,7 +44,7 @@ export function SummaryList({
         </Fragment>
       ))}
       {footnote && (
-        <p className="mt-4 text-[12px] text-text-secondary">{footnote}</p>
+        <p className="mt-4 text-caption text-text-secondary">{footnote}</p>
       )}
     </Card>
   );

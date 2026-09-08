@@ -14,7 +14,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={fieldId} className="text-[13px] font-bold text-text-primary">
+          <label htmlFor={fieldId} className="text-label font-bold text-text-primary">
             {label}
           </label>
         )}
@@ -22,7 +22,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ref={ref}
           id={fieldId}
           className={cn(
-            "h-12 rounded-[var(--radius-sm)] border bg-surface-card px-4 text-[15px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
+            "h-12 rounded-[var(--radius-sm)] border bg-surface-card px-4 text-body text-text-primary outline-none placeholder:text-text-tertiary focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
             error ? "border-error" : "border-border-strong",
             className,
           )}
@@ -30,7 +30,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           {...props}
         />
         {(error || hint) && (
-          <p className={cn("text-[12px]", error ? "text-error" : "text-text-secondary")}>
+          <p className={cn("text-caption", error ? "text-error" : "text-text-secondary")}>
             {error ?? hint}
           </p>
         )}

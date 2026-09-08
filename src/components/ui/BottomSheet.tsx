@@ -56,21 +56,22 @@ export function BottomSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-neutral-950/40" onClick={onClose} aria-hidden />
+      <div
+        className="absolute inset-0 bg-[var(--scrim)]"
+        onClick={onClose}
+        aria-hidden
+      />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className="relative w-full max-w-[480px] rounded-t-[var(--radius-xl)] bg-surface-card p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-overlay)] outline-none"
+        className="relative w-full max-w-[480px] rounded-t-[var(--radius-xl)] bg-surface-card p-gutter pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-overlay)] outline-none"
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border-strong" />
         {title && (
-          <h2
-            id={titleId}
-            className="mb-4 text-[19px] font-bold tracking-tight text-text-primary"
-          >
+          <h2 id={titleId} className="mb-4 text-heading text-text-primary">
             {title}
           </h2>
         )}

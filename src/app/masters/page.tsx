@@ -26,7 +26,7 @@ export default async function MastersPage() {
   return (
     <AppShell>
       <TopBar title="Our team" />
-      <div className="p-4">
+      <div className="p-gutter">
         {masters.length === 0 ? (
           <EmptyState title="Team details unavailable" description="Check back shortly." />
         ) : (

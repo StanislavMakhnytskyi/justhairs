@@ -25,6 +25,7 @@ export function Logo({
   return (
     <span
       className={cn("inline-flex select-none items-center gap-2", className)}
+      role="img"
       aria-label="justhairs"
     >
       <span

@@ -4,7 +4,7 @@ import { SALON } from "@/lib/salon";
 
 export function PageFooter() {
   return (
-    <footer className="border-t border-border-default px-6 py-6 text-[12px] text-text-secondary">
+    <footer className="border-t border-border-default px-gutter py-6 text-caption text-text-secondary">
       <div className="flex gap-3">
         <a
           href={SALON.instagram}

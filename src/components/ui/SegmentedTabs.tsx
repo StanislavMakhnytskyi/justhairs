@@ -1,6 +1,13 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
+import {
+  segmentedTrack,
+  segmentedItem,
+  segmentedItemActive,
+  segmentedItemIdle,
+} from "./segmented";
 
 export function SegmentedTabs<T extends string>({
   tabs,
@@ -14,13 +21,7 @@ export function SegmentedTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div
-      role="tablist"
-      className={cn(
-        "flex gap-1 rounded-[var(--radius-sm)] bg-surface-sunken p-1",
-        className,
-      )}
-    >
+    <div role="tablist" className={cn(segmentedTrack, className)}>
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -28,10 +29,8 @@ export function SegmentedTabs<T extends string>({
           aria-selected={value === t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            "flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
-            value === t.value
-              ? "bg-surface-card text-text-primary shadow-[var(--shadow-card)]"
-              : "text-text-secondary hover:text-text-primary",
+            segmentedItem,
+            value === t.value ? segmentedItemActive : segmentedItemIdle,
           )}
         >
           {t.label}
@@ -51,24 +50,37 @@ export function StepTabs({
 }) {
   return (
     <div className="flex gap-2">
-      {steps.map((s, i) => (
-        <div key={s} className="flex-1">
-          <div
-            className={cn(
-              "h-1 rounded-full",
-              i <= current ? "bg-brand" : "bg-border-default",
-            )}
-          />
-          <p
-            className={cn(
-              "mt-2 text-[12px] font-bold",
-              i === current ? "text-text-primary" : "text-text-tertiary",
-            )}
-          >
-            {s}
-          </p>
-        </div>
-      ))}
+      {steps.map((s, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <div key={s} className="flex-1">
+            <div
+              className={cn(
+                "h-1 rounded-full",
+                done && "bg-brand",
+                active && "bg-brand",
+                !done && !active && "bg-border-default",
+              )}
+            />
+            <p
+              className={cn(
+                "mt-2 flex items-center gap-1 text-caption font-bold",
+                active
+                  ? "text-text-primary"
+                  : done
+                    ? "text-text-secondary"
+                    : "text-text-tertiary",
+              )}
+            >
+              {done && (
+                <Check size={12} strokeWidth={3} className="shrink-0 text-brand" aria-hidden />
+              )}
+              {s}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }

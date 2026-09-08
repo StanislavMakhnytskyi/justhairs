@@ -19,7 +19,7 @@ export function ThemeToggle() {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-bold text-text-primary">Appearance</span>
+      <span className="text-label font-bold text-text-primary">Appearance</span>
       <SegmentedTabs
         value={theme}
         onChange={(t) => {

@@ -43,9 +43,15 @@
   --shadow-color-1: rgba(96, 97, 112, 0.16);
   --shadow-color-2: rgba(40, 41, 61, 0.04);
   --shadow-color-3: rgba(137, 138, 141, 0.24);
+  /* elevation language: --shadow-sm for dense list rows, --shadow-card for
+     prominent standalone cards. Selectable controls use a border, not a shadow. */
+  --shadow-sm: 0px 1px 2px 0px var(--shadow-color-2), 0px 2px 8px -2px var(--shadow-color-1);
   --shadow-card: 0px 4px 16px 0px var(--shadow-color-1), 0px 1px 2px 0px var(--shadow-color-2);
   --shadow-overlay: 0px -4px 24px 0px var(--shadow-color-1);
   --shadow-pressed: 0px 2px 8px 0px var(--shadow-color-3);
+
+  /* backdrop behind modals / bottom sheets */
+  --scrim: rgb(9 16 29 / 0.45);
 
   /* spacing scale */
   --space-1: 4px;
@@ -63,17 +69,27 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-pill: 999px;
+  --radius-btn: 10px;
+
+  /* single horizontal page gutter — every page, section and bar uses this */
+  --gutter: 20px;
 
   /* semantic aliases — light (default) */
   --surface-app: var(--neutral-0);
   --surface-raised: var(--neutral-25);
   --surface-sunken: var(--neutral-50);
   --surface-card: var(--neutral-0);
-  --border-default: var(--neutral-200);
+  /* --border-default is the hairline for dividers and bar edges only — it is
+     intentionally visible (#e4e4eb was ~1:1 on white). Containers get elevation
+     (shadow) or, for selectable controls, --border-strong. */
+  --border-default: #d7d8e0;
   --border-strong: var(--neutral-300);
   --text-primary: var(--neutral-900);
-  --text-secondary: var(--neutral-500);
-  --text-tertiary: var(--neutral-600);
+  /* Darker than the DS neutral-500/600 so muted copy clears WCAG AA (4.5:1)
+     on both --surface-app (#fff) and --surface-sunken (#f2f2f5). The cool
+     tint is kept. */
+  --text-secondary: #585868;
+  --text-tertiary: #68687a;
   --text-on-brand: var(--white);
   --brand: var(--purple-500);
   --brand-hover: var(--purple-600);

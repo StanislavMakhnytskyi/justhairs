@@ -20,16 +20,17 @@ export function Divider({ className }: { className?: string }) {
   return <hr className={cn("border-0 border-t border-border-default", className)} />;
 }
 
+/** The heading row shared by page sections — a title and a trailing action. */
 export function SectionHeader({
   title,
   action,
 }: {
-  title: string;
+  title?: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-center justify-between">
-      <h2 className="text-[19px] font-bold tracking-tight text-text-primary">{title}</h2>
+    <div className="mb-4 flex items-center justify-between gap-3">
+      {title && <h2 className="text-heading text-text-primary">{title}</h2>}
       {action}
     </div>
   );
@@ -52,7 +53,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] font-bold",
+        "inline-flex items-center rounded-[var(--radius-pill)] px-2.5 py-1 text-caption font-bold",
         tones[tone],
       )}
     >
@@ -69,7 +70,7 @@ export function RatingBadge({
   count?: number;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-text-secondary">
+    <span className="inline-flex items-center gap-1 text-label font-bold text-text-secondary">
       <span className="text-rating">★</span>
       {rating.toFixed(1)}
       {count !== undefined && (
@@ -128,10 +129,10 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-md)] bg-surface-sunken px-6 py-12 text-center">
-      <p className="text-[15px] font-bold text-text-primary">{title}</p>
+    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-md)] bg-surface-sunken px-gutter py-12 text-center">
+      <p className="text-subhead text-text-primary">{title}</p>
       {description && (
-        <p className="text-[13px] text-text-secondary">{description}</p>
+        <p className="text-label text-text-secondary">{description}</p>
       )}
       {action}
     </div>

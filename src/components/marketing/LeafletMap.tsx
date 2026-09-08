@@ -89,5 +89,12 @@ export function LeafletMap() {
     };
   }, []);
 
-  return <div ref={ref} className="h-44 w-full" aria-label={`Map of ${SALON.name}`} />;
+  return (
+    <div
+      ref={ref}
+      role="img"
+      aria-label={`Map showing ${SALON.name}`}
+      className="h-44 w-full"
+    />
+  );
 }

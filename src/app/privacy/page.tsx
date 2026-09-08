@@ -13,11 +13,9 @@ export default function PrivacyPage() {
   return (
     <AppShell>
       <TopBar title="Privacy Policy" />
-      <div className="p-6">
+      <div className="p-gutter">
         <Prose>
-          <p className="text-[13px] text-text-secondary">
-            Last updated 7 September 2026
-          </p>
+          <p className="text-label text-text-secondary">Last updated 7 September 2026</p>
 
           <h2>1. About this project</h2>
           <p>

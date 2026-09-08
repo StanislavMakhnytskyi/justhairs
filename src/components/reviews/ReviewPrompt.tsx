@@ -26,7 +26,7 @@ export function ReviewPrompt({
   if (done) {
     return (
       <Card className="mt-4">
-        <p className="text-[14px] font-bold text-text-primary">Thanks for the feedback</p>
+        <p className="text-subhead text-text-primary">Thanks for the feedback</p>
         <StarRating value={rating} className="mt-1" />
       </Card>
     );
@@ -58,8 +58,8 @@ export function ReviewPrompt({
   return (
     <>
       <Card className="mt-4">
-        <p className="text-[15px] font-bold text-text-primary">How was your visit?</p>
-        <p className="mt-0.5 text-[13px] text-text-secondary">{serviceName}</p>
+        <p className="text-subhead text-text-primary">How was your visit?</p>
+        <p className="mt-0.5 text-label text-text-secondary">{serviceName}</p>
         <StarRating value={rating} onChange={pick} size={28} className="mt-3" />
       </Card>
 
@@ -71,9 +71,9 @@ export function ReviewPrompt({
           maxLength={500}
           rows={4}
           placeholder="Anything you'd like to add? (optional)"
-          className="mt-4 w-full rounded-[var(--radius-sm)] border border-border-strong bg-surface-card p-3 text-[14px] text-text-primary outline-none focus:border-brand"
+          className="mt-4 w-full rounded-[var(--radius-sm)] border border-border-strong bg-surface-card p-3 text-body text-text-primary outline-none focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
         />
-        {error && <p className="mt-2 text-[13px] text-error">{error}</p>}
+        {error && <p className="mt-2 text-label text-error">{error}</p>}
         <Button block className="mt-4" disabled={rating === 0} loading={pending} onClick={send}>
           Submit review
         </Button>

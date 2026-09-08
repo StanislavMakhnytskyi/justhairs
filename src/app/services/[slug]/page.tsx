@@ -5,7 +5,8 @@ import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
-import { ChipLink } from "@/components/ui/Chip";
+import { StaffCard } from "@/components/ui/StaffCard";
+import { Stack } from "@/components/ui/Section";
 import { SmoothImage } from "@/components/ui/SmoothImage";
 import { blurFor } from "@/lib/assets";
 import { formatDuration, formatPrice } from "@/lib/format";
@@ -49,9 +50,9 @@ export default async function ServiceDetailPage({
   ]);
   const rating = serviceRatings[service.id];
 
+  // Price lives in the sticky bar; the meta line carries the rest.
   const meta = [
     formatDuration(service.duration_min),
-    formatPrice(service.price_cents),
     service.deposit_cents ? `${formatPrice(service.deposit_cents)} deposit` : null,
   ]
     .filter(Boolean)
@@ -67,41 +68,39 @@ export default async function ServiceDetailPage({
             alt=""
             width={960}
             height={540}
-            priority
+            preload
+            fetchPriority="high"
             blurDataURL={blurFor(service.photo_url)}
             sizes="(max-width: 480px) 100vw, 480px"
             wrapperClassName="block w-full"
             className="aspect-video w-full object-cover"
           />
         )}
-        <div className="space-y-4 p-6">
+        <div className="space-y-4 p-gutter">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-[24px] font-bold tracking-tight text-text-primary">
-              {service.name}
-            </h1>
+            <h1 className="text-title text-text-primary">{service.name}</h1>
             {rating && rating.review_count > 0 && (
               <RatingBadge rating={rating.rating} count={rating.review_count} />
             )}
           </div>
-          <p className="text-[14px] text-text-secondary">{meta}</p>
+          <p className="text-label text-text-secondary">{meta}</p>
           {service.description && (
-            <p className="text-[15px] leading-relaxed text-text-primary">
-              {service.description}
-            </p>
+            <p className="text-body text-text-primary">{service.description}</p>
           )}
           {staff.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-[16px] font-bold text-text-primary">Available with</h2>
-              <div className="flex flex-wrap gap-1.5">
+              <h2 className="text-subhead text-text-primary">Book with a stylist</h2>
+              <Stack gap="sm">
                 {staff.map((s) => (
-                  <ChipLink
+                  <StaffCard
                     key={s.id}
+                    name={s.name}
+                    subtitle={s.title}
+                    photoUrl={s.photo_url}
                     href={`/book?service=${service.slug}&staff=${s.id}&step=date`}
-                  >
-                    {s.name}
-                  </ChipLink>
+                  />
                 ))}
-              </div>
+              </Stack>
             </div>
           )}
         </div>

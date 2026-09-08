@@ -1,13 +1,6 @@
-import Link from "next/link";
-import { cn } from "@/lib/cn";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { SmoothImage } from "./SmoothImage";
-import { LinkPendingBar } from "./LinkPendingBar";
-
-const shell =
-  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)]";
-const interactive =
-  "hover:border-brand-hover motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
+import { RowShell } from "./RowShell";
 
 export function ShopService({
   name,
@@ -16,7 +9,6 @@ export function ShopService({
   description,
   photoUrl,
   selected,
-  action,
   href,
   onClick,
 }: {
@@ -26,18 +18,11 @@ export function ShopService({
   description?: string | null;
   photoUrl?: string | null;
   selected?: boolean;
-  action?: string;
   href?: string;
   onClick?: () => void;
 }) {
-  const cls = cn(
-    shell,
-    (href || onClick) && interactive,
-    selected ? "border-brand bg-brand-subtle" : "border-border-default bg-surface-card",
-  );
-
-  const body = (
-    <>
+  return (
+    <RowShell selected={selected} href={href} onClick={onClick}>
       {photoUrl && (
         <SmoothImage
           src={photoUrl}
@@ -50,43 +35,16 @@ export function ShopService({
         />
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-bold text-text-primary">{name}</p>
+        <p className="truncate text-subhead text-text-primary">{name}</p>
         {description && (
-          <p className="mt-0.5 line-clamp-1 text-[13px] text-text-secondary">
+          <p className="mt-0.5 line-clamp-1 text-label text-text-secondary">
             {description}
           </p>
         )}
-        <p className="mt-1 text-[13px] text-text-secondary">
+        <p className="mt-1 text-label text-text-secondary">
           {formatDuration(durationMin)} · {formatPrice(priceCents)}
         </p>
       </div>
-      {action && (
-        <span
-          className={cn(
-            "shrink-0 rounded-[var(--radius-pill)] px-3 py-1.5 text-[12px] font-bold",
-            selected
-              ? "bg-brand text-text-on-brand"
-              : "bg-surface-sunken text-text-primary",
-          )}
-        >
-          {action}
-        </span>
-      )}
-    </>
+    </RowShell>
   );
-
-  if (href)
-    return (
-      <Link href={href} className={cls}>
-        {body}
-        <LinkPendingBar />
-      </Link>
-    );
-  if (onClick)
-    return (
-      <button type="button" onClick={onClick} className={cls}>
-        {body}
-      </button>
-    );
-  return <div className={cls}>{body}</div>;
 }

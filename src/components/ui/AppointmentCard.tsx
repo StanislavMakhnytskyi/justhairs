@@ -18,18 +18,18 @@ export function AppointmentCard({ appt }: { appt: AppointmentDetail }) {
   return (
     <Link
       href={`/account/appointments/${appt.id}`}
-      className="block rounded-[var(--radius-md)] bg-surface-card p-4 shadow-[var(--shadow-card)]"
+      className="block rounded-[var(--radius-md)] bg-surface-card p-4 shadow-[var(--shadow-sm)]"
     >
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-text-secondary">{when}</span>
+        <span className="text-label text-text-secondary">{when}</span>
         <Badge tone={s.tone}>{s.label}</Badge>
       </div>
-      <p className="mt-1 text-[16px] font-bold text-text-primary">{appt.service.name}</p>
-      <p className="text-[13px] text-text-secondary">
+      <p className="mt-1 text-subhead text-text-primary">{appt.service.name}</p>
+      <p className="text-label text-text-secondary">
         {appt.staff?.name ?? "Any specialist"} · {formatPrice(appt.price_cents)}
       </p>
       {appt.review && (
-        <p className="mt-1 text-[13px] text-text-secondary">
+        <p className="mt-1 text-label text-text-secondary">
           You rated <span className="text-rating">{"★".repeat(appt.review.rating)}</span>
         </p>
       )}

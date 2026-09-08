@@ -40,7 +40,7 @@ export default async function AppointmentsPage() {
   return (
     <div>
       <TopBar title="My appointments" />
-      <div className="p-4">
+      <div className="p-gutter">
         <AppointmentsTabs
           upcoming={render(upcoming, "No upcoming appointments")}
           past={render(past, "No past visits yet")}

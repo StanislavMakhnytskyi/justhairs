@@ -115,7 +115,7 @@ export function AppointmentActions({
             />
           )}
         </div>
-        {error && <p className="mt-3 text-[13px] text-error">{error}</p>}
+        {error && <p className="mt-3 text-label text-error">{error}</p>}
         <Button
           block
           className="mt-4"
@@ -132,11 +132,11 @@ export function AppointmentActions({
         onClose={() => setSheet("none")}
         title="Cancel this appointment?"
       >
-        <p className="text-[14px] text-text-secondary">
+        <p className="text-body text-text-secondary">
           You can rebook any time. If you&rsquo;re within 24 hours of the appointment a
           €20 fee may apply.
         </p>
-        {error && <p className="mt-3 text-[13px] text-error">{error}</p>}
+        {error && <p className="mt-3 text-label text-error">{error}</p>}
         <Stack gap="sm" className="mt-4">
           <Button variant="primary" block loading={pending} onClick={submitCancel}>
             Yes, cancel it

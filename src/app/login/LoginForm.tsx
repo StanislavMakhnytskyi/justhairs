@@ -69,7 +69,7 @@ export function LoginForm() {
         Continue with Google
       </Button>
 
-      <div className="flex items-center gap-3 text-[12px] text-text-tertiary">
+      <div className="flex items-center gap-3 text-caption text-text-tertiary">
         <Divider className="flex-1" /> or <Divider className="flex-1" />
       </div>
 
@@ -119,7 +119,7 @@ export function LoginForm() {
         </form>
       )}
 
-      {status && <p className="text-[13px] text-text-secondary">{status}</p>}
+      {status && <p className="text-label text-text-secondary">{status}</p>}
     </div>
   );
 }

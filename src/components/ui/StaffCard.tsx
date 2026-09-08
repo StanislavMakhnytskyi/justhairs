@@ -1,13 +1,6 @@
-import Link from "next/link";
-import { cn } from "@/lib/cn";
 import { Avatar, RatingBadge } from "./primitives";
-import { LinkPendingBar } from "./LinkPendingBar";
+import { RowShell } from "./RowShell";
 import type { Rating } from "@/lib/supabase/types";
-
-const shell =
-  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)]";
-const interactive =
-  "hover:border-brand-hover motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
 
 export function StaffCard({
   name,
@@ -26,39 +19,25 @@ export function StaffCard({
   href?: string;
   onClick?: () => void;
 }) {
-  const cls = cn(
-    shell,
-    (href || onClick) && interactive,
-    selected ? "border-brand bg-brand-subtle" : "border-border-default bg-surface-card",
-  );
-
-  const body = (
-    <>
+  const showRating = rating && rating.review_count > 0;
+  return (
+    <RowShell
+      selected={selected}
+      href={href}
+      onClick={onClick}
+      end={
+        showRating ? (
+          <RatingBadge rating={rating!.rating} count={rating!.review_count} />
+        ) : undefined
+      }
+    >
       <Avatar name={name} src={photoUrl} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-bold text-text-primary">{name}</p>
+        <p className="truncate text-subhead text-text-primary">{name}</p>
         {subtitle && (
-          <p className="truncate text-[13px] text-text-secondary">{subtitle}</p>
+          <p className="truncate text-label text-text-secondary">{subtitle}</p>
         )}
       </div>
-      {rating && rating.review_count > 0 && (
-        <RatingBadge rating={rating.rating} count={rating.review_count} />
-      )}
-    </>
+    </RowShell>
   );
-
-  if (href)
-    return (
-      <Link href={href} className={cls}>
-        {body}
-        <LinkPendingBar />
-      </Link>
-    );
-  if (onClick)
-    return (
-      <button type="button" onClick={onClick} className={cls}>
-        {body}
-      </button>
-    );
-  return <div className={cls}>{body}</div>;
 }

@@ -46,7 +46,6 @@ export function ServiceCategoryTabs({
               durationMin={s.duration_min}
               description={s.description}
               photoUrl={s.photo_url}
-              action="Book"
             />
           ))}
         </Stack>

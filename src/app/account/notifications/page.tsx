@@ -5,7 +5,7 @@ export default function NotificationsPage() {
   return (
     <div>
       <TopBar title="Notifications" />
-      <div className="p-6">
+      <div className="p-gutter">
         <EmptyState
           title="Notifications are coming soon"
           description="Appointment reminders and payment nudges will show up here."

@@ -44,7 +44,12 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-pill: 999px;
+  --radius-btn: 10px;
 
+  /* one horizontal page gutter: px-gutter, gap-gutter, -mx-gutter, … */
+  --spacing-gutter: var(--gutter);
+
+  --shadow-sm: 0px 1px 2px 0px var(--shadow-color-2), 0px 2px 8px -2px var(--shadow-color-1);
   --shadow-card: 0px 4px 16px 0px var(--shadow-color-1), 0px 1px 2px 0px var(--shadow-color-2);
   --shadow-overlay: 0px -4px 24px 0px var(--shadow-color-1);
   --shadow-pressed: 0px 2px 8px 0px var(--shadow-color-3);
@@ -59,32 +64,49 @@
   --animate-fade-in-up: fade-in-up 180ms cubic-bezier(0.2, 0, 0, 1);
   --animate-indeterminate: indeterminate 1.1s ease-in-out infinite;
 
-  --text-h1: 48px;
-  --text-h1--letter-spacing: -1.5px;
-  --text-h1--line-height: 1;
-  --text-h2: 32px;
-  --text-h2--letter-spacing: -0.6px;
-  --text-h2--line-height: 1.05;
-  --text-h3: 24px;
-  --text-h3--letter-spacing: -0.4px;
-  --text-h3--line-height: 1.1;
-  --text-h4: 19px;
-  --text-h4--letter-spacing: -0.02em;
-  --text-h4--line-height: 1.2;
-  --text-h5: 16px;
-  --text-h5--letter-spacing: -0.02em;
-  --text-h5--line-height: 1.3;
+  /* Type scale — named steps with locked line-height / tracking / weight, so
+     every `text-label` renders identically wherever it lands. Components use
+     only these; raw `text-[Npx]` is disallowed in components/**.
+       display  hero headline, large numerals
+       title    page <h1>
+       heading  section titles, sheet titles
+       subhead  card / person names, sub-section <h2>
+       body     descriptions, paragraph copy, input text
+       label    field labels, list subtitles, meta lines, chips
+       caption  footnotes, opening hours, badges, nav labels */
+  --text-display: 32px;
+  --text-display--line-height: 1.06;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+  --text-title: 23px;
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.015em;
+  --text-title--font-weight: 700;
+  --text-heading: 18px;
+  --text-heading--line-height: 1.3;
+  --text-heading--letter-spacing: -0.01em;
+  --text-heading--font-weight: 700;
+  --text-subhead: 16px;
+  --text-subhead--line-height: 1.35;
+  --text-subhead--letter-spacing: -0.005em;
+  --text-subhead--font-weight: 700;
   --text-body: 15px;
-  --text-body--letter-spacing: 0.3px;
-  --text-body--line-height: 1.5;
-  --text-small: 13px;
-  --text-small--letter-spacing: 0.2px;
-  --text-small--line-height: 1.45;
+  --text-body--line-height: 1.55;
+  --text-label: 13px;
+  --text-label--line-height: 1.45;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
 }
 
+/* ThemeScript always writes an explicit data-theme before paint. Pin the
+   native-control scheme to the resolved theme so a no-JS visitor with OS dark
+   doesn't get dark form controls on the (light) fallback page. */
 html {
-  color-scheme: light dark;
+  color-scheme: light;
   -webkit-tap-highlight-color: transparent;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {

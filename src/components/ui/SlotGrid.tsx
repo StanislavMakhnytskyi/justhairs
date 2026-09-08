@@ -3,7 +3,8 @@
 import { cn } from "@/lib/cn";
 import { formatSlotTime } from "@/lib/format";
 
-const CELL = "rounded-[var(--radius-sm)] border py-2.5 text-[14px] font-bold";
+const CELL =
+  "flex min-h-11 items-center justify-center rounded-[var(--radius-sm)] border py-2 text-body font-bold";
 
 export function SlotGrid({
   times,
@@ -20,7 +21,11 @@ export function SlotGrid({
 }) {
   if (times.length === 0) return null;
   return (
-    <div role="group" aria-label="Choose a time" className="grid grid-cols-3 gap-2">
+    <div
+      role="radiogroup"
+      aria-label="Choose a time"
+      className="grid grid-cols-3 gap-2"
+    >
       {times.map((t) => {
         const active = t === value;
         const open = available.has(t);
@@ -30,7 +35,8 @@ export function SlotGrid({
             type="button"
             onClick={() => open && onChange(t)}
             disabled={!open}
-            aria-pressed={active}
+            role="radio"
+            aria-checked={active}
             className={cn(
               CELL,
               "transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2",
@@ -38,7 +44,7 @@ export function SlotGrid({
                 "cursor-not-allowed border-border-default bg-surface-sunken text-text-tertiary line-through",
               open &&
                 !active &&
-                "border-border-default bg-surface-card text-text-primary hover:border-brand-hover motion-safe:active:scale-[0.96]",
+                "border-border-strong bg-surface-card text-text-primary hover:border-brand motion-safe:active:scale-[0.96]",
               active && "border-brand bg-brand text-text-on-brand",
             )}
           >

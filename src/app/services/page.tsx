@@ -14,7 +14,7 @@ export default async function ServicesPage() {
   return (
     <AppShell>
       <TopBar title="Services" />
-      <div className="p-4">
+      <div className="p-gutter">
         <Suspense fallback={null}>
           <ServiceCategoryTabs men={men} women={women} />
         </Suspense>

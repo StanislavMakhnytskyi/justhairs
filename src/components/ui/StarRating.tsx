@@ -31,8 +31,8 @@ export function StarRating({
           type="button"
           disabled={readOnly}
           aria-label={`${n} star${n > 1 ? "s" : ""}`}
-          aria-checked={!readOnly && value === n}
           role={readOnly ? undefined : "radio"}
+          aria-checked={readOnly ? undefined : value === n}
           className={cn(
             "rounded-full",
             !readOnly &&
