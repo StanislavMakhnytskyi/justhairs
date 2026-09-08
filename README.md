@@ -126,16 +126,40 @@ for later milestones — tables exist; routes show a "coming soon" state.
    `completed`. If `create extension pg_cron` errors, enable **pg_cron** first
    under Database → Extensions, then re-run `0002`.
 
-4. **Auth providers** (Supabase → Authentication → Providers):
+4. **Auth config + email templates.** Sign-in is **email one-time code, never a
+   magic link** — Supabase picks link vs. code purely from the template body, so
+   every template in `supabase/email-templates/` renders `{{ .Token }}` (the
+   6-digit code) and none render `{{ .ConfirmationURL }}`.
 
-   - **Email**: enabled by default. Paste `supabase/email-templates/otp.html` into the
-     **Magic Link** and **Confirm signup** templates so sign-in sends a 6-digit code
-     rather than a link.
+   `supabase/config.toml` owns the auth email settings (`otp_length = 6`,
+   `otp_expiry = 3600`) and points each mailer at its template. Apply it to a
+   linked project:
+
+   ```bash
+   supabase link --project-ref <ref>
+   supabase config push
+   ```
+
+   No CLI? Paste each file's contents into **Authentication → Emails** in the
+   dashboard (`magic_link.html` → "Magic Link", `confirmation.html` → "Confirm
+   signup", etc.) and set **OTP expiry** to 3600s. Edit the templates in
+   `supabase/email-templates/` — `_base.html` documents the available variables.
+
    - **Google**: enable it, create a Web OAuth client in Google Cloud Console,
      add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
-     redirect URI, paste the client ID/secret into Supabase, and add
-     `http://localhost:3000/**` + your Vercel URL to Authentication → URL
-     Configuration → Redirect URLs.
+     redirect URI, and paste the client ID/secret into Supabase.
+
+   **URL Configuration** (Authentication → URL Configuration) — get this wrong and
+   Supabase drops your `redirectTo` and bounces to the bare Site URL, so the
+   `?code=` lands on `/` instead of `/auth/callback` and no session is created:
+
+   - **Site URL**: your one canonical origin, e.g. `https://justhairs.vercel.app`
+     (not a `*-<team>.vercel.app` deploy alias).
+   - **Redirect URLs**: `http://localhost:3000/**`, `https://<canonical-domain>/**`,
+     and `https://<project>-*.vercel.app/**` if you sign in from preview deploys.
+   - Set Vercel's `NEXT_PUBLIC_SITE_URL` to the same canonical origin — the app
+     builds its OAuth `redirectTo` from it, and `src/proxy.ts` forwards any stray
+     `/?code=` to `/auth/callback` as a backstop.
 
 5. **Demo data** (optional — past visits + reviews so the UI has real content):
 
@@ -218,6 +242,8 @@ src/
     queries.ts, appointments.ts  Data access
     format.ts, cn.ts, tv.ts      Helpers + design-system utilities
 supabase/
+  config.toml                    Auth email / OTP settings (supabase config push)
+  email-templates/               Branded one-time-code emails ({{ .Token }})
   migrations/0001_init.sql       Schema, RLS, booking-engine RPCs
   migrations/0002_reviews_and_cron.sql  Review guard, rating views, pg_cron
   seed.sql                       Demo salon, services, staff, hours

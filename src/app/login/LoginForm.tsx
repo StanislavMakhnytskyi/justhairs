@@ -19,9 +19,13 @@ export function LoginForm() {
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const redirectTo = `${
-    typeof window !== "undefined" ? window.location.origin : ""
-  }/auth/callback?next=${encodeURIComponent(next)}`;
+  // Always send OAuth back to the canonical origin, not whatever Vercel alias
+  // the user happens to be on — otherwise Supabase's redirect-allowlist check
+  // fails and it falls back to the Site URL (dropping the /auth/callback path).
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function google() {
     setBusy(true);

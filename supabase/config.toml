@@ -1,0 +1,44 @@
+# Supabase project config — auth email / OTP only.
+#
+# Scoped deliberately narrow: the database schema lives in
+# supabase/migrations/*.sql, and redirect URLs + OAuth providers stay in the
+# dashboard (they differ per environment). This file only pins how sign-in
+# emails work, so `supabase config push` is safe to run against prod.
+#
+#     supabase link --project-ref <ref>
+#     supabase config push
+#
+# Anything not listed here keeps Supabase's defaults.
+
+project_id = "justhairs"
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+# No password auth in this app — don't email a code to change one.
+secure_password_change = false
+max_frequency = "20s"
+# The one-time code: 6 digits, valid for 60 minutes.
+otp_length = 6
+otp_expiry = 3600
+
+# --- Email templates -------------------------------------------------------
+# Each renders {{ .Token }} (the 6-digit code), never {{ .ConfirmationURL }},
+# so sign-in is always a one-time code and never a magic link. The login UI
+# verifies the code in src/app/login/LoginForm.tsx.
+
+[auth.email.template.magic_link]
+subject = "Your justhairs sign-in code"
+content_path = "./supabase/email-templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your email — justhairs"
+content_path = "./supabase/email-templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Your justhairs recovery code"
+content_path = "./supabase/email-templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email — justhairs"
+content_path = "./supabase/email-templates/email_change.html"

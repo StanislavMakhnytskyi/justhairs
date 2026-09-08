@@ -1,0 +1,21 @@
+<!--
+  justhairs — shared reference for the OTP email templates.
+
+  Supabase decides "magic link vs. one-time code" purely from the template
+  body: a template that renders {{ .ConfirmationURL }} sends a clickable link;
+  a template that renders {{ .Token }} sends a 6-digit code. Every template in
+  this folder uses {{ .Token }} on purpose, so users always get a code to type
+  back into the app (src/app/login/LoginForm.tsx → verifyOtp).
+
+  Applied from supabase/config.toml:
+    [auth.email.template.magic_link]    → magic_link.html    (returning sign-in)
+    [auth.email.template.confirmation]  → confirmation.html  (first sign-in)
+    [auth.email.template.recovery]      → recovery.html
+    [auth.email.template.email_change]  → email_change.html
+
+  Push to a linked project with:  supabase config push
+  Or paste a file's contents into Authentication → Emails in the dashboard.
+
+  Available variables: {{ .Token }}, {{ .SiteURL }}, {{ .Email }}, {{ .Data }}.
+  Do NOT add {{ .ConfirmationURL }} — that turns the email back into a link.
+-->
