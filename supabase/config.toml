@@ -9,6 +9,11 @@
 #     supabase config push
 #
 # Anything not listed here keeps Supabase's defaults.
+#
+# NOTE: custom templates + custom SMTP below need either a paid plan or the
+# custom SMTP block filled in — the free tier's built-in mailer rejects both
+# (`config push` 400s with "not available for free tier projects using the
+# default email provider"). Set RESEND_SMTP_PASSWORD and push again.
 
 project_id = "justhairs"
 
@@ -21,6 +26,20 @@ max_frequency = "20s"
 # The one-time code: 6 digits, valid for 60 minutes.
 otp_length = 6
 otp_expiry = 3600
+
+# --- Custom SMTP (Resend) ------------------------------------------------
+# The built-in Supabase mailer is capped at ~2 emails/hour and is test-only.
+# Resend's free tier is 3,000/mo. Create an API key at resend.com, then:
+#   export RESEND_SMTP_PASSWORD=re_xxx   (or set it in Vercel / your shell)
+# Swap admin_email for a verified domain sender once DNS is set up.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_SMTP_PASSWORD)"
+admin_email = "onboarding@resend.dev"
+sender_name = "justhairs"
 
 # --- Email templates -------------------------------------------------------
 # Each renders {{ .Token }} (the 6-digit code), never {{ .ConfirmationURL }},

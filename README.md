@@ -132,18 +132,30 @@ for later milestones — tables exist; routes show a "coming soon" state.
    6-digit code) and none render `{{ .ConfirmationURL }}`.
 
    `supabase/config.toml` owns the auth email settings (`otp_length = 6`,
-   `otp_expiry = 3600`) and points each mailer at its template. Apply it to a
-   linked project:
+   `otp_expiry = 3600`), the SMTP sender, and points each mailer at its template.
 
-   ```bash
-   supabase link --project-ref <ref>
-   supabase config push
-   ```
+   **Custom SMTP is required** — the built-in Supabase mailer is ~2 emails/hour,
+   test-only, and the free tier rejects custom templates while it's active
+   (`config push` → *"not available for free tier projects using the default
+   email provider"*). Set one up (Resend's free tier is 3,000/mo):
 
-   No CLI? Paste each file's contents into **Authentication → Emails** in the
-   dashboard (`magic_link.html` → "Magic Link", `confirmation.html` → "Confirm
-   signup", etc.) and set **OTP expiry** to 3600s. Edit the templates in
-   `supabase/email-templates/` — `_base.html` documents the available variables.
+   1. Create an API key at resend.com; verify a sending domain (or use
+      `onboarding@resend.dev` to start).
+   2. `export RESEND_SMTP_PASSWORD=re_xxx` (and add it in Vercel).
+   3. Apply everything to the linked project:
+
+      ```bash
+      supabase link --project-ref <ref>
+      supabase config push
+      ```
+
+   No CLI? In the dashboard: **Authentication → Emails → SMTP Settings** (enable
+   custom SMTP with the Resend creds), then paste each file into the template
+   tabs (`magic_link.html` → "Magic Link", `confirmation.html` → "Confirm
+   signup", `recovery.html` → "Reset Password", `email_change.html` → "Change
+   Email Address"), and set **OTP expiry** to 3600s under
+   **Authentication → Providers → Email**. `_base.html` documents the template
+   variables.
 
    - **Google**: enable it, create a Web OAuth client in Google Cloud Console,
      add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
