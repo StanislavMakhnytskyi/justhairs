@@ -49,7 +49,11 @@ export function AppointmentActions({
     setTime(null);
     const day = format(d, "yyyy-MM-dd");
     start(async () => {
-      setSlots(await getAvailableSlots({ serviceId, staffId: currentStaffId, day }));
+      try {
+        setSlots(await getAvailableSlots({ serviceId, staffId: currentStaffId, day }));
+      } catch {
+        setSlots([]);
+      }
     });
   }
 

@@ -43,6 +43,8 @@ import type { Staff } from "@/lib/supabase/types";
 
 const STEPS = ["Service", "Specialist", "Date & time", "Review"];
 const PENDING_KEY = "justhairs:pending-booking";
+/** Open days to prefetch — covers the date strip so empty days can be disabled. */
+const DATE_WINDOW = 14;
 
 /** "Thu 10:00" — for the next-available quick picks. */
 function formatQuickPick(iso: string): string {
@@ -77,6 +79,13 @@ export function BookingFlow({
   const [error, setError] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[] | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotError, setSlotError] = useState(false);
+  // Whether the current date came from the URL on first paint (a shared/deep
+  // link) rather than a tap in the strip. Cleared the moment the user picks a
+  // day themselves — see the date-strip / quick-pick handlers.
+  const [enteredWithDate, setEnteredWithDate] = useState(() =>
+    Boolean(params.get("date")),
+  );
 
   const serviceSlug = params.get("service");
   const staffId = params.get("staff");
@@ -142,10 +151,17 @@ export function BookingFlow({
         if (cached) {
           setSlots(cached);
           setLoadingSlots(false);
+          setSlotError(false);
           return;
         }
         setLoadingSlots(true);
-        setSlots(await loadSlotsInto(service.id, sid, day));
+        setSlotError(false);
+        try {
+          setSlots(await loadSlotsInto(service.id, sid, day));
+        } catch {
+          setSlots([]);
+          setSlotError(true);
+        }
         setLoadingSlots(false);
       });
     },
@@ -163,10 +179,63 @@ export function BookingFlow({
   useEffect(() => {
     if (!service || step < 1) return;
     const sid = staffId ?? "any";
-    for (const day of nextOpenDates(openWeekdays, 5)) {
-      void loadSlotsInto(service.id, sid, day);
+    for (const day of nextOpenDates(openWeekdays, DATE_WINDOW)) {
+      void loadSlotsInto(service.id, sid, day).catch(() => {});
     }
   }, [service, staffId, step, openWeekdays]);
+
+  // Which of the strip's open days are known to have zero slots — those get
+  // disabled so a normal in-app tap never lands on an empty day. Days we
+  // haven't fetched yet stay enabled (optimistic); if a tap resolves empty the
+  // effect below clears the selection.
+  const availabilitySnapshot = useSyncExternalStore(
+    subscribeSlotCache,
+    () => {
+      if (!service || step !== 2) return "";
+      const sid = staffId ?? "any";
+      return nextOpenDates(openWeekdays, DATE_WINDOW)
+        .map((d) => {
+          const c = getCachedSlots(slotCacheKey(service.id, sid, d));
+          return `${d}:${c === undefined ? "?" : c.length === 0 ? "0" : "1"}`;
+        })
+        .join("|");
+    },
+    () => "",
+  );
+  const emptyDays = useMemo(() => {
+    const set = new Set<string>();
+    for (const part of availabilitySnapshot.split("|")) {
+      const [d, state] = part.split(":");
+      if (state === "0") set.add(d);
+    }
+    return set;
+  }, [availabilitySnapshot]);
+
+  // A day picked in-app (not a deep link) that turns out to have no times: drop
+  // it silently and let the now-disabled strip button speak for itself, rather
+  // than showing a dead-end message.
+  useEffect(() => {
+    if (
+      step === 2 &&
+      dateStr &&
+      !enteredWithDate &&
+      !slotError &&
+      !loadingSlots &&
+      slots !== null &&
+      availableSet.size === 0
+    ) {
+      setParams({ date: null, time: null });
+    }
+  }, [
+    step,
+    dateStr,
+    enteredWithDate,
+    slotError,
+    loadingSlots,
+    slots,
+    availableSet,
+    setParams,
+  ]);
 
   // Earliest few bookable times, from the warm cache — quick picks on the date
   // step so a user needn't poke every day.
@@ -356,9 +425,15 @@ export function BookingFlow({
           <div className="flex flex-col gap-4">
             <DateStrip
               value={dateStr ? new Date(`${dateStr}T00:00:00`) : null}
-              isEnabled={(d) => openWeekdays.includes(d.getDay())}
+              isEnabled={(d) =>
+                openWeekdays.includes(d.getDay()) &&
+                !emptyDays.has(format(d, "yyyy-MM-dd"))
+              }
               onChange={(d) => {
                 const ds = format(d, "yyyy-MM-dd");
+                setEnteredWithDate(false);
+                setSlots(null);
+                setSlotError(false);
                 setParams({ date: ds, time: null });
                 loadSlots(ds, staffId);
               }}
@@ -375,12 +450,13 @@ export function BookingFlow({
                       <button
                         key={q.iso}
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          setEnteredWithDate(false);
                           setParams(
                             { date: q.day, time: q.iso, step: "review" },
                             { push: true },
-                          )
-                        }
+                          );
+                        }}
                         className="rounded-[var(--radius-pill)] border border-border-strong bg-surface-card px-3 py-1.5 text-label font-bold text-text-primary transition-[color,border-color] duration-150 ease-[var(--ease-out)] hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
                       >
                         {formatQuickPick(q.iso)}
@@ -393,7 +469,17 @@ export function BookingFlow({
             ) : loadingSlots || slots === null ? (
               <SlotGridSkeleton />
             ) : availableSet.size === 0 ? (
-              <Hint>No open times on this day. Try another date.</Hint>
+              enteredWithDate || slotError ? (
+                <Hint>
+                  {slotError
+                    ? "We couldn't load times for this day. Try another date."
+                    : "No open times on this day. Try another date."}
+                </Hint>
+              ) : (
+                // In-app tap on a day that resolved empty — the effect above is
+                // clearing the selection; hold the skeleton for that beat.
+                <SlotGridSkeleton />
+              )
             ) : (
               <SlotGrid
                 times={dayTimes}

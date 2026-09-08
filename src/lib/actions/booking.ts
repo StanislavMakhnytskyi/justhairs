@@ -89,6 +89,9 @@ export async function getAvailableSlots(input: {
     p_staff_id: input.staffId,
     p_day: input.day,
   });
-  if (error || !data) return [];
+  // Throw on a real RPC failure so callers can tell "the lookup broke" apart
+  // from "this day genuinely has no slots" (an empty array).
+  if (error) throw new Error(error.message || "Could not load availability.");
+  if (!data) return [];
   return (data as { starts_at: string }[]).map((s) => s.starts_at);
 }
