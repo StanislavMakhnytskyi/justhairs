@@ -62,8 +62,9 @@ point a prospective client at:
   appointment server-side with the service-role key.
 - **No accounts, no friction.** Booking is guest checkout: the slot is held the moment
   you confirm, then one screen collects contact details and either takes payment
-  through **Stripe Checkout** (test mode) or records "pay at the salon". A signature-
-  verified webhook marks the appointment paid.
+  through **Stripe Checkout** (test mode) or records "pay at the salon". The
+  confirmation page verifies the returning Checkout session and marks the
+  appointment paid — no webhook endpoint, runs on any hosting tier.
 - **Honest scoping.** The client booking + payment flow is complete and polished.
   Notification delivery and the admin panel have their schema in place and ship in
   later milestones — no half-finished screens in the demo.
@@ -98,7 +99,7 @@ exist; nothing half-built ships in the demo.
 | Styling       | Tailwind v4 (`@theme` in `globals.css`) + design tokens in `src/styles/tokens.css` |
 | UI components | Local design-system library in `src/components/ui`                               |
 | Data          | Supabase (Postgres + Row-Level Security)                                         |
-| Payments      | Stripe Checkout (test mode), signature-verified webhook                          |
+| Payments      | Stripe Checkout (test mode), session verified on return — no webhook            |
 | Validation    | Zod-validated server actions                                                     |
 | Analytics     | Vercel Analytics                                                                 |
 | Hosting       | Vercel + hosted Supabase                                                         |
@@ -133,19 +134,16 @@ exist; nothing half-built ships in the demo.
    dependency: `book_appointment` becomes anon-callable and appointments carry
    guest contact details + a payment status.
 
-4. **Stripe (test mode).** Card payments on the booking flow use Stripe Checkout.
+4. **Stripe (test mode, optional).** Card payments on the booking flow use Stripe
+   Checkout (hosted redirect). There is **no webhook** — the confirmation page
+   verifies the session with Stripe on return and marks the appointment paid.
 
-   - Create a free Stripe account, stay in **test mode**, and copy the test keys
-     into `.env.local`: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
-   - For local webhooks, run the Stripe CLI and copy the signing secret it prints
-     into `STRIPE_WEBHOOK_SECRET`:
-
-     ```bash
-     stripe listen --forward-to localhost:3000/api/stripe/webhook
-     ```
-
-   - Without Stripe keys the flow still works — the "Pay now" button just reports
-     that card payments aren't set up; "pay after the service" is unaffected.
+   - Create a free Stripe account, stay in **test mode**
+     (dashboard.stripe.com/test/apikeys), and put the secret key in `.env.local`:
+     `STRIPE_SECRET_KEY=sk_test_…`.
+   - That's the only Stripe variable. Without it the flow still works — "Pay now"
+     just reports that card payments aren't set up; "pay after the service" is
+     unaffected.
 
 5. **Demo data** (optional — past visits + reviews so the UI has real content):
 
@@ -186,9 +184,7 @@ exist; nothing half-built ships in the demo.
 1. Push to GitHub, import the repo in Vercel.
 2. Add every variable from `.env.example` in the Vercel project settings, with
    `NEXT_PUBLIC_SITE_URL` set to the deployed URL (Stripe redirects back to it).
-3. In the Stripe dashboard (test mode) add a webhook endpoint at
-   `https://<your-domain>/api/stripe/webhook` for the `checkout.session.completed`
-   event, and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+3. That's it — no webhook endpoint to register. Works on Vercel's free plan.
 
 ## Project layout
 
@@ -200,8 +196,7 @@ src/
     masters/                     Team (static / ISR)
     book/                        4-step flow (BookingFlow.tsx)
     book/pay/[id]/               Guest details + Stripe Checkout / pay-later
-    book/confirmation/[id]/      Reference code + status
-    api/stripe/webhook/          Stripe event handler (signature-verified)
+    book/confirmation/[id]/      Reference code + status (reconciles the Stripe session)
   components/
     ui/                          Design-system component library (Tailwind v4)
     layout/                      AppShell
@@ -211,8 +206,9 @@ src/
     supabase/                    server.ts (anon + service-role clients), types
     actions/booking.ts           Zod-validated server actions (book, pay, checkout)
     slot-cache.ts                useSyncExternalStore availability cache
-    queries.ts, appointments.ts  Data access
-    stripe.ts                    Stripe client
+    queries.ts                   Catalog data access
+    appointments.ts              Single-appointment read + Stripe session reconcile
+    stripe.ts                    Stripe client (null without a key)
     format.ts, cn.ts, tv.ts      Helpers + design-system utilities
 supabase/
   migrations/0001_init.sql       Schema, RLS, booking-engine RPCs
@@ -235,7 +231,8 @@ minus `staff_time_off` and existing appointments, stepped by
 concrete stylist is assigned at booking time. `book_appointment` re-checks availability
 inside the transaction to guard against double-booking — the UI can't race it — and
 stamps a short confirmation code. Contact details and payment are collected on the
-next screen; a Stripe webhook flips `payment_status` to `paid`.
+next screen; if the guest pays by card, the confirmation page verifies the Stripe
+Checkout session on return and flips `payment_status` to `paid` (no webhook).
 
 ---
 

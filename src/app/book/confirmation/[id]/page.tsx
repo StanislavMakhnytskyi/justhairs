@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Divider } from "@/components/ui/primitives";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
-import { getAppointment } from "@/lib/appointments";
+import { getAppointment, reconcileCheckout } from "@/lib/appointments";
 
 export const dynamic = "force-dynamic";
 
@@ -13,18 +13,22 @@ export default async function ConfirmationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ paid?: string }>;
+  searchParams: Promise<{ session_id?: string }>;
 }) {
-  const [{ id }, { paid }] = await Promise.all([params, searchParams]);
+  const [{ id }, { session_id }] = await Promise.all([params, searchParams]);
+
+  // Back from Stripe Checkout — verify the session and mark the row paid.
+  if (session_id) await reconcileCheckout(id, session_id);
+
   const appt = await getAppointment(id);
   if (!appt) notFound();
 
-  const isPaid = appt.payment_status === "paid" || paid === "1";
-  const payLine = isPaid
-    ? "Paid in full"
-    : appt.payment_status === "pay_later"
-      ? "Pay after your visit"
-      : "Payment not completed";
+  const payLine =
+    appt.payment_status === "paid"
+      ? "Paid in full"
+      : appt.payment_status === "pay_later"
+        ? "Pay after your visit"
+        : "Payment not completed";
 
   return (
     <AppShell className="items-center justify-center px-gutter py-12 text-center">
@@ -64,7 +68,11 @@ export default async function ConfirmationPage({
             Complete payment
           </Button>
         )}
-        <Button href="/" variant={appt.payment_status === "unpaid" ? "text" : "primary"} block>
+        <Button
+          href="/"
+          variant={appt.payment_status === "unpaid" ? "text" : "primary"}
+          block
+        >
           Back to home
         </Button>
       </div>

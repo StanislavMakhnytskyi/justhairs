@@ -173,7 +173,8 @@ export async function startCheckout(
         },
       ],
       metadata: { appointment_id: appt.id },
-      success_url: `${origin}/book/confirmation/${appt.id}?paid=1`,
+      // No webhook — the confirmation page reconciles this session on return.
+      success_url: `${origin}/book/confirmation/${appt.id}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book/pay/${appt.id}`,
     });
 

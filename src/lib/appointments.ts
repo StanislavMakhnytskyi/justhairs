@@ -1,4 +1,5 @@
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { stripe } from "@/lib/stripe";
 import type { Appointment, Service, Staff } from "@/lib/supabase/types";
 
 export type AppointmentDetail = Appointment & {
@@ -26,5 +27,43 @@ export async function getAppointment(id: string) {
     return (data as AppointmentDetail | null) ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Stripe redirects back to the confirmation page with `?session_id=` after
+ * Checkout. There is no webhook — we verify the session with Stripe here and
+ * flip the appointment to `paid`. Idempotent: only acts while it's still
+ * `unpaid`, so a refresh is harmless.
+ */
+export async function reconcileCheckout(
+  appointmentId: string,
+  sessionId: string,
+): Promise<"paid" | "pending" | "noop"> {
+  if (!stripe || !isSupabaseConfigured) return "noop";
+  try {
+    const supabase = createAdminClient();
+    const { data: appt } = await supabase
+      .from("appointments")
+      .select("payment_status")
+      .eq("id", appointmentId)
+      .maybeSingle();
+    if (!appt || appt.payment_status !== "unpaid") return "noop";
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (
+      session.metadata?.appointment_id !== appointmentId ||
+      session.payment_status !== "paid"
+    ) {
+      return "pending";
+    }
+
+    await supabase
+      .from("appointments")
+      .update({ payment_status: "paid" })
+      .eq("id", appointmentId);
+    return "paid";
+  } catch {
+    return "pending";
   }
 }
