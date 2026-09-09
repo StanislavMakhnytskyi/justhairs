@@ -43,6 +43,7 @@ import type { ServiceWithCategory } from "@/lib/queries";
 import type { Staff } from "@/lib/supabase/types";
 
 const STEPS = ["Service", "Specialist", "Date & time", "Review"];
+const STEP_PARAM = ["service", "specialist", "date", "review"];
 /** Open days to prefetch — covers the date strip so empty days can be disabled. */
 const DATE_WINDOW = 14;
 
@@ -285,9 +286,21 @@ export function BookingFlow({
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [step]);
 
+  // Jump to an earlier step, dropping every choice that belongs to a later one.
+  const goToStep = useCallback(
+    (target: number) => {
+      if (target >= step || target < 0) return;
+      const patch: Record<string, string | null> = { step: STEP_PARAM[target] };
+      if (target < 3) patch.time = null;
+      if (target < 2) patch.date = null;
+      if (target < 1) patch.staff = null;
+      setParams(patch, { push: true });
+    },
+    [step, setParams],
+  );
+
   function goBack() {
-    // Forward step transitions were pushed, so Back walks them.
-    if (step > 0) router.back();
+    if (step > 0) goToStep(step - 1);
     else router.push("/");
   }
 
@@ -316,7 +329,7 @@ export function BookingFlow({
     <AppShell>
       <TopBar title="Book appointment" onBack={goBack} />
       <div className="p-gutter">
-        <StepTabs steps={STEPS} current={step} />
+        <StepTabs steps={STEPS} current={step} onStepClick={goToStep} />
       </div>
 
       <div

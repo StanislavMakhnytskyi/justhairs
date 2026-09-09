@@ -40,30 +40,34 @@ export function SegmentedTabs<T extends string>({
   );
 }
 
-/** Non-interactive step indicator for the booking flow. */
+/**
+ * Step indicator for the booking flow. Completed steps become buttons when
+ * `onStepClick` is given, so the user can jump back to an earlier step.
+ */
 export function StepTabs({
   steps,
   current,
+  onStepClick,
 }: {
   steps: string[];
   current: number;
+  onStepClick?: (index: number) => void;
 }) {
   return (
-    <div className="flex gap-2">
+    <ol className="flex gap-2">
       {steps.map((s, i) => {
         const done = i < current;
         const active = i === current;
-        return (
-          <div key={s} className="flex-1">
-            <div
+        const clickable = done && !!onStepClick;
+        const Inner = (
+          <>
+            <span
               className={cn(
-                "h-1 rounded-full",
-                done && "bg-brand",
-                active && "bg-brand",
-                !done && !active && "bg-border-default",
+                "block h-1 rounded-full",
+                done || active ? "bg-brand" : "bg-border-default",
               )}
             />
-            <p
+            <span
               className={cn(
                 "mt-2 flex items-center gap-1 text-caption font-bold",
                 active
@@ -71,16 +75,38 @@ export function StepTabs({
                   : done
                     ? "text-text-secondary"
                     : "text-text-tertiary",
+                clickable && "group-hover:text-brand",
               )}
             >
               {done && (
-                <Check size={12} strokeWidth={3} className="shrink-0 text-brand" aria-hidden />
+                <Check
+                  size={12}
+                  strokeWidth={3}
+                  className="shrink-0 text-brand"
+                  aria-hidden
+                />
               )}
               {s}
-            </p>
-          </div>
+            </span>
+          </>
+        );
+        return (
+          <li key={s} className="flex-1">
+            {clickable ? (
+              <button
+                type="button"
+                onClick={() => onStepClick(i)}
+                aria-label={`Back to ${s}`}
+                className="group block w-full rounded-[6px] text-left focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4"
+              >
+                {Inner}
+              </button>
+            ) : (
+              <div aria-current={active ? "step" : undefined}>{Inner}</div>
+            )}
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
