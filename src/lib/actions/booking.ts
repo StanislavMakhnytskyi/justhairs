@@ -10,9 +10,14 @@ export type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
+// Loose UUID shape — z.uuid() enforces RFC version/variant bits, which the
+// seeded staff ids (2222...-0000-...) don't satisfy. These ids only get bound
+// as RPC parameters, so shape is all we need.
+const id = z.guid();
+
 const bookSchema = z.object({
-  serviceId: z.string().uuid(),
-  staffId: z.string().uuid().nullable(),
+  serviceId: id,
+  staffId: id.nullable(),
   // Any date-parseable string — the slot times come straight from Postgres
   // (offset + microsecond format), which Zod's strict .datetime() rejects.
   startsAt: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "bad date"),
@@ -84,7 +89,7 @@ export async function getDayAvailability(input: {
 }
 
 const contactSchema = z.object({
-  appointmentId: z.string().uuid(),
+  appointmentId: id,
   name: z.string().trim().min(1, "Name is required").max(120),
   email: z.string().trim().email("Enter a valid email").max(200),
   phone: z.string().trim().min(5, "Phone is required").max(40),
