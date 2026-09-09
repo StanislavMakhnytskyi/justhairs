@@ -136,6 +136,52 @@ export async function saveGuestDetails(
   return { ok: true, data: undefined };
 }
 
+/** Back out of a held booking before paying — frees the slot again. */
+export async function abandonBooking(
+  appointmentId: string,
+): Promise<ActionResult> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("appointments")
+    .select("payment_status, stripe_session_id")
+    .eq("id", appointmentId)
+    .maybeSingle();
+  const row = data as
+    | { payment_status: string; stripe_session_id: string | null }
+    | null;
+  if (!row) return { ok: true, data: undefined };
+  if (row.payment_status === "paid") {
+    return { ok: false, error: "This booking is already paid." };
+  }
+
+  // If a Checkout session was opened, make sure it isn't actually paid, then
+  // close it out before we drop the row.
+  if (row.stripe_session_id && stripe) {
+    try {
+      const s = await stripe.checkout.sessions.retrieve(row.stripe_session_id);
+      if (s.payment_status === "paid") {
+        await supabase
+          .from("appointments")
+          .update({ payment_status: "paid" })
+          .eq("id", appointmentId);
+        return { ok: false, error: "This booking was already paid." };
+      }
+      if (s.status === "open") {
+        await stripe.checkout.sessions.expire(row.stripe_session_id).catch(() => {});
+      }
+    } catch {
+      /* ignore — treat as not paid */
+    }
+  }
+
+  await supabase
+    .from("appointments")
+    .delete()
+    .eq("id", appointmentId)
+    .eq("payment_status", "unpaid");
+  return { ok: true, data: undefined };
+}
+
 /** Choose to settle up at the salon. */
 export async function payLater(
   appointmentId: string,

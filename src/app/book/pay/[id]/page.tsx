@@ -1,10 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
-import { TopBar } from "@/components/ui/TopBar";
 import { SummaryList, SummaryRow } from "@/components/ui/SummaryList";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
+import { SALON_TZ } from "@/lib/salon";
 import { getAppointment } from "@/lib/appointments";
 import { PayForm } from "./PayForm";
+import { PayTopBar } from "./PayTopBar";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,17 @@ export default async function PayPage({
   // Already settled (or chosen to pay later) — nothing to do here.
   if (appt.payment_status !== "unpaid") redirect(`/book/confirmation/${id}`);
 
+  const day = new Date(appt.starts_at).toLocaleDateString("en-CA", {
+    timeZone: SALON_TZ,
+  });
+  const backHref =
+    `/book?service=${encodeURIComponent(appt.service.slug)}` +
+    `&staff=${appt.staff_id ?? "any"}` +
+    `&date=${day}&time=${encodeURIComponent(appt.starts_at)}&step=review`;
+
   return (
     <AppShell>
-      <TopBar title="Almost done" />
+      <PayTopBar appointmentId={appt.id} backHref={backHref} />
       <div className="flex flex-col gap-6 px-gutter pb-10 pt-2">
         <SummaryList>
           <SummaryRow label="Service" value={appt.service.name} />
@@ -33,10 +42,7 @@ export default async function PayPage({
           <SummaryRow label="Total" value={formatPrice(appt.price_cents)} strong />
         </SummaryList>
 
-        <PayForm
-          appointmentId={appt.id}
-          priceLabel={formatPrice(appt.price_cents)}
-        />
+        <PayForm appointmentId={appt.id} priceLabel={formatPrice(appt.price_cents)} />
       </div>
     </AppShell>
   );

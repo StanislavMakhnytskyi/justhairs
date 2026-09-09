@@ -74,7 +74,8 @@ export function PayForm({
       }
       if (next === "pay") {
         const res = await startCheckout(appointmentId);
-        if (res.ok) window.location.href = res.data.url;
+        // replace() so browser-Back from Stripe doesn't return to this form.
+        if (res.ok) window.location.replace(res.data.url);
         else setFormError(res.error);
       } else {
         const res = await payLater(appointmentId);

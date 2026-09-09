@@ -55,6 +55,35 @@ function formatQuickPick(iso: string): string {
   return `${weekday} ${formatSlotTime(iso)}`;
 }
 
+function NextAvailable({
+  label,
+  picks,
+  onPick,
+}: {
+  label: string;
+  picks: { day: string; iso: string }[];
+  onPick: (day: string, iso: string) => void;
+}) {
+  if (picks.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-2 text-label font-bold text-text-secondary">{label}</p>
+      <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+        {picks.map((q) => (
+          <button
+            key={q.iso}
+            type="button"
+            onClick={() => onPick(q.day, q.iso)}
+            className="rounded-[var(--radius-pill)] border border-border-strong bg-surface-card px-3 py-1.5 text-label font-bold text-text-primary transition-[color,border-color] duration-150 ease-[var(--ease-out)] hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
+          >
+            {formatQuickPick(q.iso)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   services: ServiceWithCategory[];
   staff: Staff[];
@@ -76,12 +105,6 @@ export function BookingFlow({
   const [slots, setSlots] = useState<string[] | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState(false);
-  // Whether the current date came from the URL on first paint (a shared/deep
-  // link) rather than a tap in the strip. Cleared the moment the user picks a
-  // day themselves — see the date-strip / quick-pick handlers.
-  const [enteredWithDate, setEnteredWithDate] = useState(() =>
-    Boolean(params.get("date")),
-  );
 
   const serviceSlug = params.get("service");
   const staffId = params.get("staff");
@@ -208,54 +231,40 @@ export function BookingFlow({
     return set;
   }, [availabilitySnapshot]);
 
-  // A day picked in-app (not a deep link) that turns out to have no times: drop
-  // it silently and let the now-disabled strip button speak for itself, rather
-  // than showing a dead-end message.
-  useEffect(() => {
-    if (
-      step === 2 &&
-      dateStr &&
-      !enteredWithDate &&
-      !slotError &&
-      !loadingSlots &&
-      slots !== null &&
-      availableSet.size === 0
-    ) {
-      setParams({ date: null, time: null });
-    }
-  }, [
-    step,
-    dateStr,
-    enteredWithDate,
-    slotError,
-    loadingSlots,
-    slots,
-    availableSet,
-    setParams,
-  ]);
-
-  // Earliest few bookable times, from the warm cache — quick picks on the date
-  // step so a user needn't poke every day.
+  // Earliest few bookable times, from the warm cache — shown both before a day
+  // is picked and when the picked day turns out to be full.
   const slotSnapshot = useSyncExternalStore(
     subscribeSlotCache,
     () => {
-      if (!service || step !== 2 || dateStr) return "";
+      if (!service || step !== 2) return "";
       const sid = staffId ?? "any";
-      return nextOpenDates(openWeekdays, 5)
-        .map((d) => getCachedSlots(slotCacheKey(service.id, sid, d))?.[0] ?? "")
+      return nextOpenDates(openWeekdays, DATE_WINDOW)
+        .map((d) => `${d}=${getCachedSlots(slotCacheKey(service.id, sid, d))?.[0] ?? ""}`)
         .join("|");
     },
     () => "",
   );
-  const quickPicks = useMemo(() => {
+  const nextAvailable = useMemo(() => {
     if (!slotSnapshot) return [];
-    const days = nextOpenDates(openWeekdays, 5);
     return slotSnapshot
       .split("|")
-      .map((iso, i) => ({ day: days[i], iso }))
-      .filter((q) => q.iso)
+      .map((part) => {
+        const eq = part.indexOf("=");
+        return { day: part.slice(0, eq), iso: part.slice(eq + 1) };
+      })
+      .filter((q) => q.iso && q.day !== dateStr)
       .slice(0, 3);
-  }, [slotSnapshot, openWeekdays]);
+  }, [slotSnapshot, dateStr]);
+
+  const pickSlot = useCallback(
+    (day: string, iso: string) => {
+      setParams(
+        { date: day, time: new Date(iso).toISOString(), step: "review" },
+        { push: true },
+      );
+    },
+    [setParams],
+  );
 
   // If a service has exactly one eligible stylist, there's nothing to choose —
   // skip the specialist step. `replace` (not push) so Back lands on the service
@@ -381,7 +390,6 @@ export function BookingFlow({
               }
               onChange={(d) => {
                 const ds = format(d, "yyyy-MM-dd");
-                setEnteredWithDate(false);
                 setSlots(null);
                 setSlotError(false);
                 setParams({ date: ds, time: null });
@@ -389,51 +397,32 @@ export function BookingFlow({
               }}
             />
             {!dateStr ? (
-              <div className="flex flex-col gap-3">
-                {quickPicks.length > 0 && (
-                  <div
-                    role="group"
-                    aria-label="Next available"
-                    className="flex flex-wrap gap-2"
-                  >
-                    {quickPicks.map((q) => (
-                      <button
-                        key={q.iso}
-                        type="button"
-                        onClick={() => {
-                          setEnteredWithDate(false);
-                          setParams(
-                            {
-                              date: q.day,
-                              time: new Date(q.iso).toISOString(),
-                              step: "review",
-                            },
-                            { push: true },
-                          );
-                        }}
-                        className="rounded-[var(--radius-pill)] border border-border-strong bg-surface-card px-3 py-1.5 text-label font-bold text-text-primary transition-[color,border-color] duration-150 ease-[var(--ease-out)] hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
-                      >
-                        {formatQuickPick(q.iso)}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="flex flex-col gap-4">
+                <NextAvailable
+                  label="Next available"
+                  picks={nextAvailable}
+                  onPick={pickSlot}
+                />
                 <Hint>Pick a day to see open times.</Hint>
               </div>
             ) : loadingSlots || slots === null ? (
               <SlotGridSkeleton />
             ) : availableSet.size === 0 ? (
-              enteredWithDate || slotError ? (
+              <div className="flex flex-col gap-4">
                 <Hint>
                   {slotError
-                    ? "We couldn't load times for this day. Try another date."
-                    : "No open times on this day. Try another date."}
+                    ? "We couldn't load times for that day — try another."
+                    : `Fully booked on ${format(
+                        new Date(`${dateStr}T00:00:00`),
+                        "EEEE d MMM",
+                      )}.`}
                 </Hint>
-              ) : (
-                // In-app tap on a day that resolved empty — the effect above is
-                // clearing the selection; hold the skeleton for that beat.
-                <SlotGridSkeleton />
-              )
+                <NextAvailable
+                  label="Next available"
+                  picks={nextAvailable}
+                  onPick={pickSlot}
+                />
+              </div>
             ) : (
               <SlotGrid
                 times={dayTimes}

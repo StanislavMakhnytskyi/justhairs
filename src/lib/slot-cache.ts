@@ -45,34 +45,49 @@ export async function loadWindow(
   days: string[],
 ): Promise<void> {
   if (days.length === 0) return;
+  const sid = staffId === "any" ? null : staffId;
   const missing = days.filter(
     (d) => !map.has(slotCacheKey(serviceId, staffId, d)),
   );
   if (missing.length === 0) return;
 
-  const all = await getDayAvailability({
-    serviceId,
-    staffId: staffId === "any" ? null : staffId,
-    from: missing[0],
-    days:
-      Math.round(
-        (Date.parse(`${missing[missing.length - 1]}T00:00:00Z`) -
-          Date.parse(`${missing[0]}T00:00:00Z`)) /
-          86_400_000,
-      ) + 1,
-  });
+  try {
+    const all = await getDayAvailability({
+      serviceId,
+      staffId: sid,
+      from: missing[0],
+      days:
+        Math.round(
+          (Date.parse(`${missing[missing.length - 1]}T00:00:00Z`) -
+            Date.parse(`${missing[0]}T00:00:00Z`)) /
+            86_400_000,
+        ) + 1,
+    });
 
-  const byDay = new Map<string, string[]>();
-  for (const iso of all) {
-    const d = salonDay(iso);
-    const list = byDay.get(d);
-    if (list) list.push(iso);
-    else byDay.set(d, [iso]);
+    const byDay = new Map<string, string[]>();
+    for (const iso of all) {
+      const d = salonDay(iso);
+      const list = byDay.get(d);
+      if (list) list.push(iso);
+      else byDay.set(d, [iso]);
+    }
+    for (const d of days) {
+      map.set(slotCacheKey(serviceId, staffId, d), byDay.get(d) ?? []);
+    }
+    listeners.forEach((l) => l());
+  } catch {
+    // The range RPC may not be deployed yet — fall back to per-day lookups for
+    // the nearest days so day-disabling and the "next available" chips still work.
+    for (const d of missing.slice(0, 8)) {
+      try {
+        const slots = await getAvailableSlots({ serviceId, staffId: sid, day: d });
+        map.set(slotCacheKey(serviceId, staffId, d), slots);
+        listeners.forEach((l) => l());
+      } catch {
+        /* leave this day unknown */
+      }
+    }
   }
-  for (const d of days) {
-    map.set(slotCacheKey(serviceId, staffId, d), byDay.get(d) ?? []);
-  }
-  listeners.forEach((l) => l());
 }
 
 /** Return cached slots, or fetch + cache them and notify subscribers. */
