@@ -99,7 +99,9 @@ async function loadPayable(appointmentId: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("appointments")
-    .select("id, status, payment_status, price_cents, starts_at, service:services(name)")
+    .select(
+      "id, status, payment_status, price_cents, starts_at, customer_email, service:services(name)",
+    )
     .eq("id", appointmentId)
     .maybeSingle();
   return data as
@@ -109,6 +111,7 @@ async function loadPayable(appointmentId: string) {
         payment_status: string;
         price_cents: number;
         starts_at: string;
+        customer_email: string | null;
         service: { name: string } | null;
       }
     | null;
@@ -245,6 +248,8 @@ export async function startCheckout(
         },
       ],
       metadata: { appointment_id: appt.id },
+      // Already collected on the guest-details form — Stripe skips asking again.
+      customer_email: appt.customer_email ?? undefined,
       // No webhook — the confirmation page reconciles this session on return.
       success_url: `${origin}/book/confirmation/${appt.id}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book/pay/${appt.id}`,

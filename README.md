@@ -123,6 +123,7 @@ exist; nothing half-built ships in the demo.
    - `supabase/migrations/0001_init.sql`
    - `supabase/migrations/0002_reviews_and_cron.sql`
    - `supabase/migrations/0003_guest_booking_no_auth.sql`
+   - `supabase/migrations/0004_day_availability.sql`
    - `supabase/seed.sql`
 
    (Or, with the Supabase CLI linked: `supabase db push` then
@@ -186,6 +187,52 @@ exist; nothing half-built ships in the demo.
    `NEXT_PUBLIC_SITE_URL` set to the deployed URL (Stripe redirects back to it).
 3. That's it — no webhook endpoint to register. Works on Vercel's free plan.
 
+## Regression testing
+
+Playwright, run against the real deployed site (never localhost) — a fast
+route/RPC smoke suite, and a slower end-to-end suite that clicks through the
+guest-booking flow for real, including a Stripe **test-mode** payment.
+
+```bash
+npx playwright install chromium   # once
+npm run test:smoke                # ~seconds — routes 200/404, RPCs callable
+npm run test:e2e                  # ~1-2 min — books, pays, confirms, cleans up
+```
+
+Both default to `TEST_PROD_URL` from `.env.local`; append `:preview` to target
+`TEST_PREVIEW_URL` instead (a Vercel preview deploy) — e.g.
+`npm run test:e2e:preview`.
+
+- **`tests/smoke/`** — no browser, just HTTP + a direct anon-key RPC call.
+  Checks every public route responds, `/book/pay/<bogus-id>` and
+  `/book/confirmation/<bogus-id>` 404 instead of 500ing, and that
+  `get_available_slots` / `get_day_availability` (migrations `0003`/`0004`)
+  are actually deployed.
+- **`tests/e2e/`** — real Chromium, drives the UI: picks the first service,
+  "Any specialist", the earliest open day/time (falling back to a "Next
+  available" chip if the first day picked is full), fills the guest-details
+  form with a `e2e+<timestamp>@justhairs.test` email (same tagging convention
+  as `scripts/seed-demo.mjs`), and either chooses "pay after the service" or
+  pays with Stripe's `4242 4242 4242 4242` test card. Also covers the
+  clickable step-tabs / back-button behaviour.
+- Every test that reaches `createBooking` records the appointment id and
+  deletes exactly that row afterward (`tests/support/cleanup.ts`, service-role
+  key) — nothing is left behind in the database, pass or fail.
+- `tests/e2e/booking-pay-now.spec.ts` drives Stripe's hosted Checkout page
+  directly and is the one most likely to need updating if Stripe changes that
+  page's markup; it skips itself automatically if `STRIPE_SECRET_KEY` isn't
+  configured on the deployment under test.
+
+**CI:** `.github/workflows/regression.yml` triggers on a GitHub deployment
+status (which Vercel's integration posts after every deploy — preview and
+production) rather than on push, so it always tests the URL that actually
+finished building. The smoke suite runs for every deployment; the e2e suite
+only for a production one. Needs three repo secrets:
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY` (the last only for e2e's cleanup step). A failing
+run's HTML report (with trace + screenshot) is attached to the workflow as an
+artifact.
+
 ## Project layout
 
 ```
@@ -214,11 +261,18 @@ supabase/
   migrations/0001_init.sql       Schema, RLS, booking-engine RPCs
   migrations/0002_reviews_and_cron.sql  Review guard, rating views, pg_cron
   migrations/0003_guest_booking_no_auth.sql  Drop auth; guest bookings + payment status
+  migrations/0004_day_availability.sql  get_day_availability — one round trip for a date range
   seed.sql                       Demo salon, services, staff, hours
 scripts/
   seed-demo.mjs                  Optional: demo guest visits, reviews, reservations
   sync-catalog.mjs               Push catalog changes to a live DB
   gen-blur.mjs                   Regenerate image blur previews
+tests/
+  smoke/                        Route + RPC checks (no browser)
+  e2e/                          Full booking + Stripe-test-mode-payment flows
+  support/                      Shared step-through-the-flow + cleanup helpers
+playwright.config.ts            baseURL from TEST_PROD_URL / TEST_PREVIEW_URL
+.github/workflows/regression.yml  Runs the suites above after each deploy
 ```
 
 ## Booking engine
