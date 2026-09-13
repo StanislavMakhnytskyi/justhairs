@@ -71,17 +71,28 @@ export async function loadWindow(
       if (list) list.push(iso);
       else byDay.set(d, [iso]);
     }
-    for (const d of days) {
-      map.set(slotCacheKey(serviceId, staffId, d), byDay.get(d) ?? []);
+    // Only write the days we actually set out to fill, and only if nothing
+    // else cached them while this request was in flight — NOT the full
+    // `days` list. The RPC range only spans `missing`, so writing every day
+    // in `days` wiped out already-correct entries (e.g. the currently viewed
+    // date, warmed a moment earlier by a direct loadSlots call) back to `[]`,
+    // which flipped a day with real slots to "disabled" in the date strip.
+    for (const d of missing) {
+      const key = slotCacheKey(serviceId, staffId, d);
+      if (map.has(key)) continue;
+      map.set(key, byDay.get(d) ?? []);
     }
     listeners.forEach((l) => l());
   } catch {
     // The range RPC may not be deployed yet — fall back to per-day lookups for
     // the nearest days so day-disabling and the "next available" chips still work.
     for (const d of missing.slice(0, 8)) {
+      const key = slotCacheKey(serviceId, staffId, d);
+      if (map.has(key)) continue;
       try {
         const slots = await getAvailableSlots({ serviceId, staffId: sid, day: d });
-        map.set(slotCacheKey(serviceId, staffId, d), slots);
+        if (map.has(key)) continue;
+        map.set(key, slots);
         listeners.forEach((l) => l());
       } catch {
         /* leave this day unknown */
