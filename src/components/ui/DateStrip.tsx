@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { cn } from "@/lib/cn";
 
@@ -19,11 +19,20 @@ export function DateStrip({
   isEnabled?: (d: Date) => boolean;
 }) {
   const list = Array.from({ length: days }, (_, i) => addDays(from, i));
+  const activeRef = useRef<HTMLButtonElement | null>(null);
 
-  // Bring a pre-selected (deep-linked) day into view instead of leaving it off-screen.
-  const revealSelected = useCallback((node: HTMLButtonElement | null) => {
-    node?.scrollIntoView({ block: "nearest", inline: "center" });
-  }, []);
+  // Center the selected day whenever it changes — on a deep-linked initial
+  // value (instant) and on every subsequent tap (eased), so a click near
+  // either edge of the strip doesn't leave the new day half off-screen.
+  useEffect(() => {
+    if (!value || !activeRef.current) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    activeRef.current.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: reduced ? "auto" : "smooth",
+    });
+  }, [value]);
 
   return (
     <div
@@ -37,7 +46,7 @@ export function DateStrip({
         return (
           <button
             key={d.toISOString()}
-            ref={active ? revealSelected : undefined}
+            ref={active ? activeRef : undefined}
             onClick={() => enabled && onChange(d)}
             disabled={!enabled}
             role="radio"
