@@ -50,14 +50,22 @@ consider a per-hold secret (signed cookie or a `hold_token` column) for
 mutations.
 
 ### 4. `loadSlots` didn't check its result was still wanted when it resolved — Medium — **Fixed**
-`src/app/book/BookingFlow.tsx`. Tapping date A then quickly date B fired two
-overlapping fetches; whichever resolved last won the `slots` state,
-regardless of which date was actually selected by then — this is what a user
-actually hit: pick a day, every slot shows crossed out (the grid is holding
-a previous day's data), and only re-tapping the same day — forcing a fresh,
-uncontested fetch — fixed it. Fixed by tagging each `loadSlots` call with a
-generation number (`loadSlotsGeneration` ref) and dropping any result that
-arrives after a newer call has superseded it.
+`src/app/book/BookingFlow.tsx`. Confirmed live on prod from a screen
+recording: pick a day, every slot shows crossed out (the grid is holding a
+previous selection's data); re-tap the same day and it corrects itself. Two
+things were needed, not one:
+- `loadSlotsGeneration` (a ref counter) tags every `loadSlots` call and
+  drops a result that arrives after a newer call has superseded it — closes
+  the case of two competing fetches (day A's slow fetch landing after day
+  B's fast/cached one).
+- `slotsFor` records which `(day, staff)` `slots` actually reflects, and the
+  grid only renders once that matches the URL's current `(date, staff)` —
+  otherwise it shows the loading skeleton. This closes the other half: the
+  URL params (`useSearchParams()`, updated via a router navigation) and
+  `slots` (updated via a resolved fetch) are two independently-timed
+  mechanisms and can briefly disagree about which selection is current even
+  with only *one* fetch in flight — the first fix alone didn't cover that,
+  which is why the bug still reproduced on prod after it shipped.
 
 ## B. Error handling / diagnosability
 

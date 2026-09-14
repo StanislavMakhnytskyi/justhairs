@@ -124,6 +124,13 @@ export function BookingFlow({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[] | null>(null);
+  // Which (day, staff) `slots` actually belongs to. The URL params and
+  // `slots` are updated by two different mechanisms — a router navigation
+  // vs. a resolved fetch — so they can briefly disagree about which
+  // selection is "current." Rendering the grid only once they match (see the
+  // skeleton guard in step 2 below) means that disagreement is never
+  // visible, no matter which side lags.
+  const [slotsFor, setSlotsFor] = useState<string | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState(false);
 
@@ -189,13 +196,18 @@ export function BookingFlow({
   // "next available" quick picks below can read them during render. Show the
   // grid for the chosen day, from cache when we have it.
   //
-  // Fixed (was CODE_REVIEW.md #4): a fetch for a day the user has since
-  // moved on from could resolve after a newer one and clobber `slots` with
-  // the wrong day's data — the grid would render every visible time as
-  // unavailable (none of them match the day actually on screen) until the
-  // next tap forced a fresh, uncontested fetch. `loadSlotsGeneration` tags
-  // each call so a late-arriving result for an outdated (day, sid) is
-  // dropped instead of applied.
+  // Fixed (was CODE_REVIEW.md #4): a fetch for a (day, staff) the user has
+  // since moved on from could resolve after a newer one and clobber `slots`
+  // with the wrong selection's data — the grid would render every visible
+  // time as unavailable (none of them match the day actually on screen)
+  // until the next tap forced a fresh, uncontested fetch. Two things fix
+  // this together: `loadSlotsGeneration` drops a late-arriving result for a
+  // superseded call outright, and `slotsFor` records which (day, staff)
+  // `slots` actually reflects so the grid only ever renders once that
+  // matches the URL — closing the gap even when the mismatch comes from the
+  // router's own params update lagging behind a fast (e.g. cached) fetch,
+  // not just from two competing fetches.
+  const slotsKey = (day: string, sid: string | null) => `${day}:${sid ?? ""}`;
   const loadSlotsGeneration = useRef(0);
   const loadSlots = useCallback(
     (day: string, sid: string | null) => {
@@ -207,6 +219,7 @@ export function BookingFlow({
         if (cached) {
           if (isCurrent()) {
             setSlots(cached);
+            setSlotsFor(slotsKey(day, sid));
             setLoadingSlots(false);
             setSlotError(false);
           }
@@ -216,10 +229,14 @@ export function BookingFlow({
         setSlotError(false);
         try {
           const result = await loadSlotsInto(service.id, sid, day);
-          if (isCurrent()) setSlots(result);
+          if (isCurrent()) {
+            setSlots(result);
+            setSlotsFor(slotsKey(day, sid));
+          }
         } catch {
           if (isCurrent()) {
             setSlots([]);
+            setSlotsFor(slotsKey(day, sid));
             setSlotError(true);
           }
         }
@@ -229,8 +246,18 @@ export function BookingFlow({
     [service],
   );
 
-  // Load slots when arriving with a date already in the URL (deep link / back-nav).
-  const needsSlots = !!(service && dateStr && staffId && slots === null && !loadingSlots);
+  // Load slots whenever the URL's (date, staff) doesn't match what `slots`
+  // was last loaded for — covers arriving with a date already in the URL
+  // (deep link / back-nav) *and* landing back on this step with a stale
+  // selection still loaded (e.g. after a "next available" chip jumped
+  // straight to Review for a different day than the one last viewed here).
+  const needsSlots = !!(
+    service &&
+    dateStr &&
+    staffId &&
+    !loadingSlots &&
+    slotsFor !== slotsKey(dateStr, staffId)
+  );
   useEffect(() => {
     if (needsSlots) loadSlots(dateStr!, staffId);
   }, [needsSlots, dateStr, staffId, loadSlots]);
@@ -473,7 +500,9 @@ export function BookingFlow({
                 )}
                 <Hint>Pick a day to see open times.</Hint>
               </div>
-            ) : loadingSlots || slots === null ? (
+            ) : loadingSlots ||
+              slots === null ||
+              slotsFor !== slotsKey(dateStr, staffId) ? (
               <SlotGridSkeleton />
             ) : availableSet.size === 0 ? (
               <div className="flex flex-col gap-4">
