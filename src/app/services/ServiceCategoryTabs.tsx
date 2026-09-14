@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { Stack } from "@/components/ui/Section";
 import { ShopService } from "@/components/ui/ShopService";
@@ -24,9 +24,8 @@ export function ServiceCategoryTabs({
   staffServices: { staff_id: string; service_id: string }[];
 }) {
   const params = useSearchParams();
-  const [tab, setTab] = useState<Gender>(
-    params.get("category") === "women" ? "women" : "men",
-  );
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Arrived from a stylist's card on /masters — narrow the list to what they
   // offer, and carry them into the service (so "Book" can skip straight to
@@ -41,6 +40,24 @@ export function ServiceCategoryTabs({
           )
         : null,
     [activeStaff, staffServices],
+  );
+
+  const categoryParamRaw = params.get("category");
+  const categoryParam: Gender | null =
+    categoryParamRaw === "men" || categoryParamRaw === "women" ? categoryParamRaw : null;
+  // A stylist who only offers one gender's services should land on that tab,
+  // even though the default (and the fallback below) is "men".
+  const staffOnlyOffersWomen =
+    !!offeredIds && !men.some((s) => offeredIds.has(s.id)) && women.some((s) => offeredIds.has(s.id));
+  const tab: Gender = categoryParam ?? (staffOnlyOffersWomen ? "women" : "men");
+
+  const setTab = useCallback(
+    (next: Gender) => {
+      const nextParams = new URLSearchParams(params);
+      nextParams.set("category", next);
+      router.replace(`${pathname}?${nextParams.toString()}`);
+    },
+    [params, pathname, router],
   );
 
   const shown = (tab === "women" ? women : men).filter(
