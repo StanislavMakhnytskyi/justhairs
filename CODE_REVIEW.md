@@ -49,13 +49,15 @@ enumerable, but it's inconsistent with the rest of the file.
 consider a per-hold secret (signed cookie or a `hold_token` column) for
 mutations.
 
-### 4. `loadSlots` doesn't check its result is still wanted when it resolves — Medium
-`src/app/book/BookingFlow.tsx`. Tapping date A then quickly date B fires two
-overlapping fetches; whichever resolves last wins the `slots` state,
-regardless of which date is actually selected by then — the grid can show the
-wrong day's times.
-**Fix direction:** capture `(day, sid)` at call time and bail if it no longer
-matches the current params when the promise resolves.
+### 4. `loadSlots` didn't check its result was still wanted when it resolved — Medium — **Fixed**
+`src/app/book/BookingFlow.tsx`. Tapping date A then quickly date B fired two
+overlapping fetches; whichever resolved last won the `slots` state,
+regardless of which date was actually selected by then — this is what a user
+actually hit: pick a day, every slot shows crossed out (the grid is holding
+a previous day's data), and only re-tapping the same day — forcing a fresh,
+uncontested fetch — fixed it. Fixed by tagging each `loadSlots` call with a
+generation number (`loadSlotsGeneration` ref) and dropping any result that
+arrives after a newer call has superseded it.
 
 ## B. Error handling / diagnosability
 

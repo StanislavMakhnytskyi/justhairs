@@ -188,31 +188,42 @@ export function BookingFlow({
   // Slot lookups live in a shared external store (src/lib/slot-cache) so the
   // "next available" quick picks below can read them during render. Show the
   // grid for the chosen day, from cache when we have it.
-  // KNOWN ISSUE (CODE_REVIEW.md #4): no correlation check between the
-  // (day, sid) a fetch was requested for and the current params when it
-  // resolves. Tapping date A then quickly date B fires two overlapping
-  // fetches; whichever resolves last wins `slots`, regardless of which date
-  // is actually selected by then — the grid can show the wrong day's times.
+  //
+  // Fixed (was CODE_REVIEW.md #4): a fetch for a day the user has since
+  // moved on from could resolve after a newer one and clobber `slots` with
+  // the wrong day's data — the grid would render every visible time as
+  // unavailable (none of them match the day actually on screen) until the
+  // next tap forced a fresh, uncontested fetch. `loadSlotsGeneration` tags
+  // each call so a late-arriving result for an outdated (day, sid) is
+  // dropped instead of applied.
+  const loadSlotsGeneration = useRef(0);
   const loadSlots = useCallback(
     (day: string, sid: string | null) => {
       if (!service) return;
+      const generation = ++loadSlotsGeneration.current;
+      const isCurrent = () => loadSlotsGeneration.current === generation;
       const cached = getCachedSlots(slotCacheKey(service.id, sid, day));
       startTransition(async () => {
         if (cached) {
-          setSlots(cached);
-          setLoadingSlots(false);
-          setSlotError(false);
+          if (isCurrent()) {
+            setSlots(cached);
+            setLoadingSlots(false);
+            setSlotError(false);
+          }
           return;
         }
         setLoadingSlots(true);
         setSlotError(false);
         try {
-          setSlots(await loadSlotsInto(service.id, sid, day));
+          const result = await loadSlotsInto(service.id, sid, day);
+          if (isCurrent()) setSlots(result);
         } catch {
-          setSlots([]);
-          setSlotError(true);
+          if (isCurrent()) {
+            setSlots([]);
+            setSlotError(true);
+          }
         }
-        setLoadingSlots(false);
+        if (isCurrent()) setLoadingSlots(false);
       });
     },
     [service],
