@@ -1,6 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 import { config as loadEnv } from "dotenv";
 
+// KNOWN ISSUE (CODE_REVIEW.md #23): this is the ONLY test coverage in the
+// repo — no unit/integration tests exist anywhere. The booking engine's
+// actual business rules (slot generation, the double-booking check, Zod
+// validation edges) have no test that runs without a live deployment and a
+// live Supabase project.
+//
 // Regression tests target a real deployed site (prod by default, a Vercel
 // preview when PW_TARGET=preview) — never localhost, so there's nothing to
 // build/serve here. TEST_PROD_URL / TEST_PREVIEW_URL live in .env.local

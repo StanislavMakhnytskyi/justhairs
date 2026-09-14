@@ -35,6 +35,9 @@ export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
   }
 }
 
+// TODO (CODE_REVIEW.md #9): pulls every review row over the wire to average
+// in Node, instead of an aggregate query — service_ratings/staff_ratings
+// (migration 0002) already show the right pattern one function away.
 export async function getOverallRating(): Promise<Rating | null> {
   if (!isSupabaseConfigured) return null;
   try {

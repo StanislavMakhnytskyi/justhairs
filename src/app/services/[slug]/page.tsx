@@ -49,6 +49,9 @@ export default async function ServiceDetailPage({
   const rating = serviceRatings[service.id];
 
   // Price lives in the sticky bar; the meta line carries the rest.
+  // KNOWN ISSUE (CODE_REVIEW.md #13): this shows a "deposit" whenever
+  // deposit_cents is set, but startCheckout always charges the full
+  // price_cents — nothing in the payment flow actually honors a deposit.
   const meta = [
     formatDuration(service.duration_min),
     service.deposit_cents ? `${formatPrice(service.deposit_cents)} deposit` : null,

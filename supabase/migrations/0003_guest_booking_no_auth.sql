@@ -55,6 +55,12 @@ $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Booking engine: no auth.uid(), callable by anon
 -- ─────────────────────────────────────────────────────────────────────────────
+-- KNOWN ISSUE (CODE_REVIEW.md #1): the "not exists overlapping appointment"
+-- check + insert below has no exclusion constraint or row lock behind it.
+-- Under READ COMMITTED, two concurrent calls for the same staff+slot can
+-- both pass the check before either commits -> a real double-booking. A
+-- GiST exclusion constraint on (staff_id, tstzrange(starts_at, ends_at)) or
+-- a SELECT ... FOR UPDATE here would close this.
 create or replace function book_appointment(
   p_service_id uuid,
   p_staff_id   uuid,

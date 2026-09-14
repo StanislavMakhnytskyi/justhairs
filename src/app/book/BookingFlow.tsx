@@ -136,6 +136,11 @@ export function BookingFlow({
     [slots],
   );
 
+  // KNOWN ISSUE (CODE_REVIEW.md #15): an unrecognized ?step= value (a typo,
+  // a hand-edited URL) makes findIndex return -1 here, and none of the
+  // step===0..3 branches below render — the user lands on a blank flow with
+  // no service list and no way back. Should fall back to inferring the step
+  // from which fields are actually filled when stepParam doesn't match one.
   const step: number = (() => {
     if (stepParam) return STEPS.findIndex((s) => s.toLowerCase().startsWith(stepParam));
     if (!service) return 0;
@@ -163,6 +168,11 @@ export function BookingFlow({
   // Slot lookups live in a shared external store (src/lib/slot-cache) so the
   // "next available" quick picks below can read them during render. Show the
   // grid for the chosen day, from cache when we have it.
+  // KNOWN ISSUE (CODE_REVIEW.md #4): no correlation check between the
+  // (day, sid) a fetch was requested for and the current params when it
+  // resolves. Tapping date A then quickly date B fires two overlapping
+  // fetches; whichever resolves last wins `slots`, regardless of which date
+  // is actually selected by then — the grid can show the wrong day's times.
   const loadSlots = useCallback(
     (day: string, sid: string | null) => {
       if (!service) return;
@@ -465,6 +475,9 @@ export function BookingFlow({
           </SummaryList>
         )}
         {step === 3 && error && (
+          // KNOWN ISSUE (CODE_REVIEW.md #16): missing role="alert" — the
+          // equivalent error text in PayForm has it; a screen-reader user
+          // who fails to confirm here gets no auditory feedback at all.
           <p className="mt-3 text-label text-error">{error}</p>
         )}
       </div>

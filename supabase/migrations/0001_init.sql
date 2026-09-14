@@ -1,5 +1,10 @@
 -- justhairs — initial schema, RLS, and booking engine
 -- Salon operates in a single timezone; slot math is done in local time.
+--
+-- TODO (CODE_REVIEW.md #12): profiles, orders, order_items, payments,
+-- favorites, notifications, and is_admin() below are dead since auth was
+-- removed in 0003_guest_booking_no_auth.sql — nothing in src/ references
+-- them. Left in place (already applied) rather than dropped after the fact.
 
 create extension if not exists "pgcrypto";
 

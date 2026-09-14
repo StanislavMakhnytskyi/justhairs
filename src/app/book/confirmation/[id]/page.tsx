@@ -77,6 +77,9 @@ export default async function ConfirmationPage({
         </Button>
       </div>
 
+      {/* TODO (CODE_REVIEW.md #14): this is deliberate, not a gap —
+          reschedule_appointment/cancel_appointment were dropped with the
+          rest of the auth surface in migration 0003 and never replaced. */}
       <p className="mt-6 text-caption text-text-secondary">
         Need to change or cancel? Call the salon and quote your code.
       </p>

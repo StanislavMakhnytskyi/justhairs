@@ -43,6 +43,10 @@ export async function getCatalog() {
     ]);
     return {
       categories: (categories ?? []) as ServiceCategory[],
+      // KNOWN ISSUE (CODE_REVIEW.md #10): the double-cast through `unknown`
+      // trusts the category embed's shape at compile time only — if it ever
+      // comes back null or as an array (Supabase's FK-cardinality inference
+      // can do that) this fails silently at render time, not here.
       services: (services ?? []) as unknown as ServiceWithCategory[],
       staff: (staff ?? []) as Staff[],
       staffServices: (links ?? []) as { staff_id: string; service_id: string }[],

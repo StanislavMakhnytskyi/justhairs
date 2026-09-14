@@ -204,10 +204,13 @@ Both default to `TEST_PROD_URL` from `.env.local`; append `:preview` to target
 `npm run test:e2e:preview`.
 
 - **`tests/smoke/`** — no browser, just HTTP + a direct anon-key RPC call.
-  Checks every public route responds, `/book/pay/<bogus-id>` and
-  `/book/confirmation/<bogus-id>` 404 instead of 500ing, and that
-  `get_available_slots` / `get_day_availability` (migrations `0003`/`0004`)
-  are actually deployed.
+  Checks every public route responds, and that `get_available_slots` /
+  `get_day_availability` (migrations `0003`/`0004`) are actually deployed.
+  It also asserts that `/book/pay/<bogus-id>` and `/book/confirmation/<bogus-id>`
+  currently render "Page not found" with an HTTP **200**, not a 404 — a known
+  bug ([`CODE_REVIEW.md` #19](./CODE_REVIEW.md)), asserted as today's actual
+  behavior on purpose so the suite would catch it getting worse, not to
+  imply it's correct.
 - **`tests/e2e/`** — real Chromium, drives the UI: picks the first service,
   "Any specialist", the earliest open day/time (falling back to a "Next
   available" chip if the first day picked is full), fills the guest-details

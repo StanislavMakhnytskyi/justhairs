@@ -14,6 +14,12 @@ const SELECT =
  * One appointment by id, for the payment + confirmation pages. Appointments
  * carry the guest's contact details, so this uses the service-role key (anon
  * has no read access) — only ever called server-side with an id from the URL.
+ *
+ * KNOWN ISSUE (CODE_REVIEW.md #19): both callers `notFound()` when this
+ * returns null, but that ends up responding HTTP 200, not 404 — Next
+ * commits the response status before this async lookup resolves and the
+ * throw happens. See tests/smoke/routes.spec.ts, which asserts the current
+ * (wrong) status on purpose so the suite tracks it rather than masking it.
  */
 export async function getAppointment(id: string) {
   if (!isSupabaseConfigured) return null;

@@ -1,5 +1,10 @@
 name: Regression tests
 
+# KNOWN ISSUE (CODE_REVIEW.md #21): this is the only workflow in the repo —
+# there's no lint/tsc/build gate on pull requests themselves, only this
+# post-deploy check. A broken build can merge; the only signal is Vercel's
+# own build failing, which produces no GitHub check on the PR.
+#
 # Fires from Vercel's GitHub integration posting a deployment status — not on
 # push — so this always tests the URL that actually finished deploying,
 # whether that's a PR preview or production, instead of guessing how long a

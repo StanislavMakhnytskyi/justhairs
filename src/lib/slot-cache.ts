@@ -39,6 +39,11 @@ export function subscribeSlotCache(cb: () => void): () => void {
  * exact yyyy-mm-dd list the UI will look up, so days that come back with no
  * slots are still cached as `[]` (and read as "closed / full").
  */
+// TODO (CODE_REVIEW.md #11): no in-flight-request dedup — two calls for
+// overlapping day ranges (e.g. staff toggled quickly) each compute `missing`
+// from the same snapshot before either awaits, so both hit the network for
+// the same days. The per-key "don't clobber" guard below stops them from
+// corrupting each other's writes, but not from duplicating the fetch itself.
 export async function loadWindow(
   serviceId: string,
   staffId: string | null,

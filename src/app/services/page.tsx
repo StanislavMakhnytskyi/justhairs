@@ -15,6 +15,10 @@ export default async function ServicesPage() {
     <AppShell>
       <TopBar title="Services" />
       <div className="p-gutter">
+        {/* KNOWN ISSUE (CODE_REVIEW.md #18): fallback={null} means the
+            page's actual content — the service list — is an empty shell
+            until client hydration resolves useSearchParams(). SkeletonList
+            already exists in the design system and isn't used here. */}
         <Suspense fallback={null}>
           <ServiceCategoryTabs
             men={men}

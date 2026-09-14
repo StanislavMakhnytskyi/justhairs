@@ -39,6 +39,10 @@ export async function createBooking(
   });
 
   if (error) {
+    // KNOWN ISSUE (CODE_REVIEW.md #5): classifying by substring match on the
+    // Postgres error text means any other DB failure (constraint violation,
+    // connection drop) silently collapses into the same generic message —
+    // should switch on error.code / a distinct errcode instead.
     return {
       ok: false,
       error: error.message.includes("no longer available")
@@ -51,6 +55,9 @@ export async function createBooking(
   return { ok: true, data: { id: row.id, code: row.confirmation_code ?? "" } };
 }
 
+// TODO (CODE_REVIEW.md #7): these two throw instead of returning
+// ActionResult like every other export in this file — inconsistent contract,
+// kept because callers already expect it, but a footgun for the next caller.
 export async function getAvailableSlots(input: {
   serviceId: string;
   staffId: string | null;
@@ -104,6 +111,10 @@ async function loadPayable(appointmentId: string) {
     )
     .eq("id", appointmentId)
     .maybeSingle();
+  // KNOWN ISSUE (CODE_REVIEW.md #10): trusts the query's shape at compile
+  // time only — a renamed column or the `service` embed coming back as an
+  // array (Supabase's FK-cardinality inference can do that) fails silently
+  // with undefined fields rather than a type error.
   return data as
     | {
         id: string;
@@ -144,7 +155,14 @@ export async function saveGuestDetails(
   return { ok: true, data: undefined };
 }
 
-/** Back out of a held booking before paying — frees the slot again. */
+/** Back out of a held booking before paying — frees the slot again.
+ *
+ *  KNOWN ISSUE (CODE_REVIEW.md #3): appointmentId isn't schema-validated and
+ *  there's no proof of ownership — anyone with the UUID can call this (and
+ *  payLater / startCheckout below) for someone else's booking. Bounded by
+ *  UUIDs not being enumerable, but inconsistent with createBooking/
+ *  saveGuestDetails, which do validate.
+ */
 export async function abandonBooking(
   appointmentId: string,
 ): Promise<ActionResult> {
@@ -182,6 +200,10 @@ export async function abandonBooking(
     }
   }
 
+  // KNOWN ISSUE (CODE_REVIEW.md #2): TOCTOU — if the guest finishes paying on
+  // Stripe's hosted page between the retrieve() above and this delete, a
+  // paid appointment gets deleted anyway. The "still unpaid" check and the
+  // delete need to be one atomic statement/transaction.
   await supabase
     .from("appointments")
     .delete()
@@ -264,6 +286,10 @@ export async function startCheckout(
 
     return { ok: true, data: { url: session.url } };
   } catch {
+    // KNOWN ISSUE (CODE_REVIEW.md #6): blanket catch — a bad amount, an
+    // expired key, a network blip and a real Stripe outage all collapse
+    // into this one message with nothing logged server-side to tell them
+    // apart.
     return { ok: false, error: "Could not start checkout. Please try again." };
   }
 }
