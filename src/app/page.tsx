@@ -60,7 +60,7 @@ export default async function HomePage() {
       >
         <Stack>
           {masters.slice(0, 3).map((m) => (
-            <MasterCard key={m.id} master={m} />
+            <MasterCard key={m.id} master={m} href={`/services?staff=${m.id}`} />
           ))}
         </Stack>
       </Section>

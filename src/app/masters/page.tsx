@@ -32,7 +32,7 @@ export default async function MastersPage() {
         ) : (
           <Stack>
             {masters.map((m) => (
-              <MasterCard key={m.id} master={m} />
+              <MasterCard key={m.id} master={m} href={`/services?staff=${m.id}`} />
             ))}
           </Stack>
         )}

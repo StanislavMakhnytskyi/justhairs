@@ -7,7 +7,7 @@ import { ServiceCategoryTabs } from "./ServiceCategoryTabs";
 export const revalidate = 600;
 
 export default async function ServicesPage() {
-  const { services } = await getCatalog();
+  const { services, staff, staffServices } = await getCatalog();
   const men = services.filter((s) => s.category.gender === "men");
   const women = services.filter((s) => s.category.gender === "women");
 
@@ -16,7 +16,12 @@ export default async function ServicesPage() {
       <TopBar title="Services" />
       <div className="p-gutter">
         <Suspense fallback={null}>
-          <ServiceCategoryTabs men={men} women={women} />
+          <ServiceCategoryTabs
+            men={men}
+            women={women}
+            staff={staff}
+            staffServices={staffServices}
+          />
         </Suspense>
       </div>
     </AppShell>

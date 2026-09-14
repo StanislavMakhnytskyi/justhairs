@@ -2,16 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { TopBar } from "@/components/ui/TopBar";
-import { Button } from "@/components/ui/Button";
-import { StickyBar } from "@/components/ui/StickyBar";
 import { RatingBadge } from "@/components/ui/primitives";
-import { StaffCard } from "@/components/ui/StaffCard";
-import { Stack } from "@/components/ui/Section";
 import { SmoothImage } from "@/components/ui/SmoothImage";
 import { blurFor } from "@/lib/assets";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { getCatalog, getServiceBySlug, getStaffForService } from "@/lib/queries";
 import { getRatingsMap } from "@/lib/reviews";
+import { StaffPicker } from "./StaffPicker";
+import { BookCta } from "./BookCta";
 
 export const revalidate = 600;
 
@@ -90,27 +88,13 @@ export default async function ServiceDetailPage({
           {staff.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-subhead text-text-primary">Book with a stylist</h2>
-              <Stack gap="sm">
-                {staff.map((s) => (
-                  <StaffCard
-                    key={s.id}
-                    name={s.name}
-                    subtitle={s.title}
-                    photoUrl={s.photo_url}
-                    href={`/book?service=${service.slug}&staff=${s.id}&step=date`}
-                  />
-                ))}
-              </Stack>
+              <StaffPicker slug={service.slug} staff={staff} />
             </div>
           )}
         </div>
       </div>
 
-      <StickyBar label="Price" value={formatPrice(service.price_cents)}>
-        <Button href={`/book?service=${service.slug}`} className="shrink-0">
-          Book
-        </Button>
-      </StickyBar>
+      <BookCta slug={service.slug} priceLabel={formatPrice(service.price_cents)} />
     </AppShell>
   );
 }
