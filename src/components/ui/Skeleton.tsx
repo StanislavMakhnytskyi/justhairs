@@ -1,12 +1,16 @@
 import { cn } from "@/lib/cn";
 
-export function Skeleton({ className }: { className?: string }) {
+export function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
         "rounded-[var(--radius-md)] bg-surface-sunken motion-safe:animate-pulse",
         className,
       )}
+      {...props}
     />
   );
 }

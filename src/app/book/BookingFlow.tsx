@@ -23,6 +23,7 @@ import { ShopService } from "@/components/ui/ShopService";
 import { StaffCard } from "@/components/ui/StaffCard";
 import { DateStrip } from "@/components/ui/DateStrip";
 import { SlotGrid, SlotGridSkeleton } from "@/components/ui/SlotGrid";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   formatDateTime,
   formatDuration,
@@ -79,6 +80,25 @@ function NextAvailable({
           >
             {formatQuickPick(q.iso)}
           </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Same geometry as NextAvailable, shown while the warm cache is still
+ *  filling in — so the chips don't just pop in with a layout jump. */
+function NextAvailableSkeleton() {
+  return (
+    <div aria-hidden>
+      <Skeleton className="mb-2 h-4 w-28" />
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="h-8 w-24 rounded-[var(--radius-pill)]"
+            style={{ animationDelay: `${i * 90}ms` }}
+          />
         ))}
       </div>
     </div>
@@ -241,6 +261,16 @@ export function BookingFlow({
     }
     return set;
   }, [availabilitySnapshot]);
+
+  // Whether the warm cache has resolved at least one day yet — while every
+  // day is still "?" (unknown), show a skeleton instead of an empty/blank
+  // "Next available" row.
+  const windowReady = useMemo(
+    () =>
+      availabilitySnapshot !== "" &&
+      availabilitySnapshot.split("|").some((part) => part.split(":")[1] !== "?"),
+    [availabilitySnapshot],
+  );
 
   // Earliest few bookable times, from the warm cache — shown both before a day
   // is picked and when the picked day turns out to be full.
@@ -421,11 +451,15 @@ export function BookingFlow({
             />
             {!dateStr ? (
               <div className="flex flex-col gap-4">
-                <NextAvailable
-                  label="Next available"
-                  picks={nextAvailable}
-                  onPick={pickSlot}
-                />
+                {windowReady ? (
+                  <NextAvailable
+                    label="Next available"
+                    picks={nextAvailable}
+                    onPick={pickSlot}
+                  />
+                ) : (
+                  <NextAvailableSkeleton />
+                )}
                 <Hint>Pick a day to see open times.</Hint>
               </div>
             ) : loadingSlots || slots === null ? (
@@ -440,11 +474,15 @@ export function BookingFlow({
                         "EEEE d MMM",
                       )}.`}
                 </Hint>
-                <NextAvailable
-                  label="Next available"
-                  picks={nextAvailable}
-                  onPick={pickSlot}
-                />
+                {windowReady ? (
+                  <NextAvailable
+                    label="Next available"
+                    picks={nextAvailable}
+                    onPick={pickSlot}
+                  />
+                ) : (
+                  <NextAvailableSkeleton />
+                )}
               </div>
             ) : (
               <SlotGrid
