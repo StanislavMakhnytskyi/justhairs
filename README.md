@@ -20,15 +20,39 @@ Supabase (Postgres + RLS), Stripe, Playwright
 ## Architecture
 
 ```mermaid
-flowchart LR
-  B[Browser] -->|static HTML, ISR| N[Next.js on Vercel]
-  B -->|server actions, Zod-validated| N
-  B -->|anon RPC: availability| S[(Supabase Postgres)]
-  N -->|service-role: appointment PII| S
-  N -->|create session| P[Stripe Checkout]
-  P -->|redirect with session_id| N
-  N -->|verify session, mark paid| P
+flowchart TB
+  B([Browser])
+
+  subgraph V[Vercel - Next.js]
+    direction LR
+    P[Static pages<br/>ISR]
+    A[Server actions<br/>Zod-validated]
+    C[Pay + confirmation<br/>dynamic]
+  end
+
+  subgraph X[External services]
+    direction LR
+    D[(Supabase Postgres<br/>RLS + RPCs)]
+    S[Stripe Checkout<br/>test mode]
+  end
+
+  B -->|HTML| P
+  B -->|book, pay| A
+  B -.->|anon RPC| D
+  A -->|service role| D
+  A -->|create session| S
+  S <-->|redirect, verify| C
+
+  classDef client fill:#ede9fe,stroke:#6d28d9,color:#1e1b4b
+  classDef app fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef ext fill:#dcfce7,stroke:#15803d,color:#14532d
+  class B client
+  class P,A,C app
+  class D,S ext
 ```
+
+- The anon key can only call the availability RPCs; appointment rows (contact details) are read server-side with the service-role key.
+- No webhook: after payment, Stripe redirects to the confirmation page, which verifies the session and marks the appointment paid.
 
 Public pages are prerendered and revalidated (ISR). Only `/book/pay/[id]` and
 `/book/confirmation/[id]` are dynamic, because they read one live appointment.
