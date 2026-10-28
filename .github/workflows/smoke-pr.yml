@@ -26,6 +26,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Supabase secrets are available
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are empty. Fork and Dependabot PRs get no repo Actions secrets (Dependabot has its own store); otherwise add them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
       - name: Wait for the Vercel preview deployment
         id: preview
         env:
