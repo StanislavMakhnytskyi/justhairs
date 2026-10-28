@@ -1,9 +1,8 @@
 name: Regression tests
 
-# KNOWN ISSUE (CODE_REVIEW.md #21): this is the only workflow in the repo —
-# there's no lint/tsc/build gate on pull requests themselves, only this
-# post-deploy check. A broken build can merge; the only signal is Vercel's
-# own build failing, which produces no GitHub check on the PR.
+# KNOWN ISSUE (CODE_REVIEW.md #21): there's still no lint/tsc/build gate on
+# pull requests. PRs get the smoke suite via smoke-pr.yml (against the Vercel
+# preview); this workflow covers production deploys.
 #
 # Fires from Vercel's GitHub integration posting a deployment status — not on
 # push — so this always tests the URL that actually finished deploying,
@@ -14,7 +13,10 @@ on:
 
 jobs:
   smoke:
-    if: github.event.deployment_status.state == 'success'
+    # PR previews are covered by smoke-pr.yml as a real PR check.
+    if: |
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment == 'Production'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

@@ -1,0 +1,74 @@
+name: Smoke (pull request)
+
+# Runs the Playwright smoke suite against the Vercel preview deployment of the
+# pull request, as a regular PR check (job name: "smoke" — can be marked a
+# required status check in branch protection).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: smoke-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for the Vercel preview deployment
+        id: preview
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for i in $(seq 1 60); do
+            dep=$(gh api "repos/$REPO/deployments?sha=$SHA&per_page=10" \
+              --jq '[.[] | select(.environment | test("Preview"; "i"))][0].id // empty')
+            if [ -n "$dep" ]; then
+              read -r state url < <(gh api "repos/$REPO/deployments/$dep/statuses?per_page=1" \
+                --jq '.[0] | "\(.state) \(.environment_url // "")"')
+              echo "attempt $i: deployment $dep state=${state:-none}"
+              if [ "$state" = "success" ] && [ -n "$url" ]; then
+                echo "url=$url" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+                echo "::error::Vercel preview deployment failed"
+                exit 1
+              fi
+            else
+              echo "attempt $i: no preview deployment yet"
+            fi
+            sleep 10
+          done
+          echo "::error::Timed out waiting for the Vercel preview deployment"
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run smoke tests
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.url }}
+        run: npx playwright test tests/smoke
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-pr-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14
