@@ -137,9 +137,10 @@ npm run test:e2e             # 1–2 min: book, pay, confirm, clean up
   `STRIPE_SECRET_KEY`.
 - Every test that creates an appointment deletes exactly that row afterwards
   (`tests/support/cleanup.ts`, service-role key), pass or fail.
-- **CI:** `.github/workflows/regression.yml` runs on the `deployment_status` event
-  Vercel posts, so it tests the URL that actually finished building. Smoke runs for
-  every deployment; e2e only for production. Secrets: `NEXT_PUBLIC_SUPABASE_URL`,
+- **CI:** `.github/workflows/smoke-pr.yml` runs the smoke suite as a pull-request
+  check (job `smoke`) against that PR's Vercel preview, waiting for the deployment
+  to go green first. `.github/workflows/regression.yml` runs on the `deployment_status`
+  event Vercel posts for production deploys: smoke plus e2e. Secrets: `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Failed runs upload
   the HTML report (trace + screenshot).
 

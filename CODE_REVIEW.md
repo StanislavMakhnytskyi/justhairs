@@ -185,8 +185,8 @@ matching what the test file itself says.
 ## G. Project / tooling
 
 ### 21. No CI gate on pull requests — High
-`.github/workflows/regression.yml` only runs *after* Vercel posts a
-deployment — there is no `lint`/`tsc --noEmit`/`build` check on PRs
+PRs get the Playwright smoke suite (`smoke-pr.yml`, against the Vercel
+preview), but there is still no `lint`/`tsc --noEmit`/`build` check on PRs
 themselves. A broken build can merge; the only signal is Vercel's own build
 failing, which produces no GitHub check on the PR.
 
