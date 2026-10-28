@@ -3,12 +3,15 @@ import { SectionHeader } from "./primitives";
 
 /** A page section: consistent gutters + an optional header with a trailing action. */
 export function Section({
+  id,
   title,
   action,
   compact,
   className,
   children,
 }: {
+  /** Anchor target for in-page nav links. */
+  id?: string;
   title?: string;
   action?: React.ReactNode;
   /** Tighter vertical padding — for short one-line sections. */
@@ -17,7 +20,10 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("px-gutter", compact ? "py-4" : "py-6", className)}>
+    <section
+      id={id}
+      className={cn("px-gutter", compact ? "py-4" : "py-6", id && "scroll-mt-20", className)}
+    >
       {(title || action) && <SectionHeader title={title} action={action} />}
       {children}
     </section>

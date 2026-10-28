@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+
+// Must match the --animate-sheet-down / scrim-out duration in globals.css.
+const EXIT_MS = 200;
 
 export function BottomSheet({
   open,
@@ -15,6 +18,15 @@ export function BottomSheet({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+
+  // Stay mounted through the exit animation, then unmount.
+  const [mounted, setMounted] = useState(open);
+  if (open && !mounted) setMounted(true);
+  useEffect(() => {
+    if (open || !mounted) return;
+    const t = setTimeout(() => setMounted(false), EXIT_MS);
+    return () => clearTimeout(t);
+  }, [open, mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,12 +64,14 @@ export function BottomSheet({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className={`fixed inset-0 z-50 flex items-end justify-center ${open ? "" : "pointer-events-none"}`}>
       <div
-        className="absolute inset-0 bg-[var(--scrim)]"
+        className={`absolute inset-0 bg-[var(--scrim)] ${
+          open ? "motion-safe:animate-scrim-in" : "motion-safe:animate-scrim-out"
+        }`}
         onClick={onClose}
         aria-hidden
       />
@@ -65,9 +79,12 @@ export function BottomSheet({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
+        aria-hidden={open ? undefined : true}
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className="relative w-full max-w-[480px] rounded-t-[var(--radius-xl)] bg-surface-card p-gutter pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-overlay)] outline-none"
+        className={`relative w-full max-w-[480px] rounded-t-[var(--radius-xl)] bg-surface-card p-gutter pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-overlay)] outline-none ${
+          open ? "motion-safe:animate-sheet-up" : "motion-safe:animate-sheet-down"
+        }`}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border-strong" />
         {title && (

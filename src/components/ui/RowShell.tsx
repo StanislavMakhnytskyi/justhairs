@@ -18,9 +18,9 @@ import { LinkPendingBar } from "./LinkPendingBar";
  *   static              → `end` or nothing
  */
 const shell =
-  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)]";
+  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform,translate] duration-150 ease-[var(--ease-out)]";
 const interactive =
-  "hover:border-brand motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
+  "hover:border-brand [@media(hover:hover)]:motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
 
 function RowEnd({
   selected,

@@ -23,6 +23,36 @@ const bookSchema = z.object({
   startsAt: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "bad date"),
 });
 
+// Mirrors the bookable window enforced in SQL (migration 0006).
+const MAX_DAYS_AHEAD = 90;
+const MAX_RANGE_DAYS = 31;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const dayString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "bad day");
+
+function withinBookableWindow(day: string): boolean {
+  const t = Date.parse(`${day}T00:00:00Z`);
+  if (Number.isNaN(t)) return false;
+  const now = Date.now();
+  return t >= now - 2 * DAY_MS && t <= now + (MAX_DAYS_AHEAD + 1) * DAY_MS;
+}
+
+const slotsSchema = z.object({
+  serviceId: id,
+  staffId: id.nullable(),
+  day: dayString.refine(withinBookableWindow, "out of range"),
+});
+
+const rangeSchema = z.object({
+  serviceId: id,
+  staffId: id.nullable(),
+  from: dayString.refine(withinBookableWindow, "out of range"),
+  days: z.number().int().min(1).max(MAX_RANGE_DAYS),
+});
+
+/** Postgres SQLSTATE raised by book_appointment when the slot is gone. */
+const SLOT_TAKEN = "JH409";
+
 /** Hold a slot. No sign-in — the appointment is created with a guest code and
  *  contact details are attached on the payment step. */
 export async function createBooking(
@@ -39,16 +69,11 @@ export async function createBooking(
   });
 
   if (error) {
-    // KNOWN ISSUE (CODE_REVIEW.md #5): classifying by substring match on the
-    // Postgres error text means any other DB failure (constraint violation,
-    // connection drop) silently collapses into the same generic message —
-    // should switch on error.code / a distinct errcode instead.
-    return {
-      ok: false,
-      error: error.message.includes("no longer available")
-        ? "That time was just taken. Pick another slot."
-        : "Could not create the booking. Please try again.",
-    };
+    if (error.code === SLOT_TAKEN) {
+      return { ok: false, error: "That time was just taken. Pick another slot." };
+    }
+    console.error("book_appointment failed", error);
+    return { ok: false, error: "Could not create the booking. Please try again." };
   }
 
   const row = data as { id: string; confirmation_code: string | null };
@@ -63,11 +88,13 @@ export async function getAvailableSlots(input: {
   staffId: string | null;
   day: string; // yyyy-MM-dd
 }): Promise<string[]> {
+  const parsed = slotsSchema.safeParse(input);
+  if (!parsed.success) throw new Error("Invalid availability request.");
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("get_available_slots", {
-    p_service_id: input.serviceId,
-    p_staff_id: input.staffId,
-    p_day: input.day,
+    p_service_id: parsed.data.serviceId,
+    p_staff_id: parsed.data.staffId,
+    p_day: parsed.data.day,
   });
   // Throw on a real RPC failure so callers can tell "the lookup broke" apart
   // from "this day genuinely has no slots" (an empty array).
@@ -83,12 +110,14 @@ export async function getDayAvailability(input: {
   from: string; // yyyy-MM-dd
   days: number;
 }): Promise<string[]> {
+  const parsed = rangeSchema.safeParse(input);
+  if (!parsed.success) throw new Error("Invalid availability request.");
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("get_day_availability", {
-    p_service_id: input.serviceId,
-    p_staff_id: input.staffId,
-    p_from: input.from,
-    p_days: input.days,
+    p_service_id: parsed.data.serviceId,
+    p_staff_id: parsed.data.staffId,
+    p_from: parsed.data.from,
+    p_days: parsed.data.days,
   });
   if (error) throw new Error(error.message || "Could not load availability.");
   if (!data) return [];

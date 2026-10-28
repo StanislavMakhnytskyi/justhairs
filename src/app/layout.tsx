@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -45,7 +46,9 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-full">
-        {children}
+        {/* Route changes are transitions, so this cross-fades pages in browsers
+            that support the View Transitions API and is a no-op elsewhere. */}
+        <ViewTransition>{children}</ViewTransition>
         <Analytics />
       </body>
     </html>
