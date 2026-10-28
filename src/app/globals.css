@@ -84,6 +84,10 @@
        body     descriptions, paragraph copy, input text
        label    field labels, list subtitles, meta lines, chips
        caption  footnotes, opening hours, badges, nav labels */
+  --text-hero: 56px;
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.025em;
+  --text-hero--font-weight: 700;
   --text-display: 32px;
   --text-display--line-height: 1.06;
   --text-display--letter-spacing: -0.02em;

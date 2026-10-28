@@ -1,5 +1,6 @@
-import { AppShell } from "@/components/layout/AppShell";
+import { HomeContainer, HomeShell } from "@/components/layout/HomeShell";
 import { Hero } from "@/components/marketing/Hero";
+import { HomeNav } from "@/components/marketing/HomeNav";
 import { VisitUs } from "@/components/marketing/VisitUs";
 import { PageFooter } from "@/components/marketing/PageFooter";
 import { Button } from "@/components/ui/Button";
@@ -13,19 +14,27 @@ import { Hint } from "@/components/ui/Hint";
 import { Reveal } from "@/components/ui/Reveal";
 import { getCatalog } from "@/lib/queries";
 import { buildMasters } from "@/lib/masters";
-import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
+import {
+  getLatestReviews,
+  getOverallRating,
+  getRatingsMap,
+} from "@/lib/reviews";
 
 // Statically generated, refreshed every 10 minutes.
 export const revalidate = 600;
 
 export default async function HomePage() {
-  const [{ services, staff, staffServices, workingHours }, reviews, overall, staffRatings] =
-    await Promise.all([
-      getCatalog(),
-      getLatestReviews(3),
-      getOverallRating(),
-      getRatingsMap("staff_ratings"),
-    ]);
+  const [
+    { services, staff, staffServices, workingHours },
+    reviews,
+    overall,
+    staffRatings,
+  ] = await Promise.all([
+    getCatalog(),
+    getLatestReviews(3),
+    getOverallRating(),
+    getRatingsMap("staff_ratings"),
+  ]);
 
   const masters = buildMasters(
     staff,
@@ -40,71 +49,90 @@ export default async function HomePage() {
   const popular = services.filter((s) => s.popular);
 
   return (
-    <AppShell>
+    <HomeShell>
+      <HomeNav />
       <Hero />
 
-      <ServiceSection title="Men" href="/services?category=men" items={men.slice(0, 3)} />
-      <ServiceSection
-        title="Women"
-        href="/services?category=women"
-        items={women.slice(0, 3)}
-      />
-      <ServiceSection title="Popular" href="/services" items={popular} />
+      <HomeContainer>
+        <div
+          id="services"
+          className="scroll-mt-20 lg:grid lg:grid-cols-3 lg:gap-x-8"
+        >
+          <ServiceSection
+            title="Men"
+            href="/services?category=men"
+            items={men.slice(0, 3)}
+          />
+          <ServiceSection
+            title="Women"
+            href="/services?category=women"
+            items={women.slice(0, 3)}
+          />
+          <ServiceSection title="Popular" href="/services" items={popular} />
+        </div>
 
-      <Section
-        title="Our team"
-        action={
-          masters.length > 3 ? (
-            <TextLink href="/masters">See all</TextLink>
-          ) : undefined
-        }
-      >
-        <Stack>
-          {masters.slice(0, 3).map((m, i) => (
-            <Reveal key={m.id} index={i}>
-              <MasterCard master={m} href={`/services?staff=${m.id}`} />
-            </Reveal>
-          ))}
-        </Stack>
-      </Section>
-
-      <Section
-        title="Reviews"
-        action={
-          overall ? (
-            <RatingBadge rating={overall.rating} count={overall.review_count} />
-          ) : undefined
-        }
-      >
-        {reviews.length > 0 ? (
-          <Stack>
-            {reviews.map((r, i) => (
-              <Reveal key={r.id} index={i}>
-                <ReviewCard
-                  rating={r.rating}
-                  comment={r.comment}
-                  reviewer={r.reviewer}
-                  context={r.service_name}
-                />
+        <Section
+          id="team"
+          className="lg:px-0"
+          title="Our team"
+          action={
+            masters.length > 3 ? (
+              <TextLink href="/masters">See all</TextLink>
+            ) : undefined
+          }
+        >
+          <Stack className="lg:grid lg:grid-cols-3 lg:gap-4">
+            {masters.slice(0, 3).map((m, i) => (
+              <Reveal key={m.id} index={i}>
+                <MasterCard master={m} href={`/services?staff=${m.id}`} />
               </Reveal>
             ))}
           </Stack>
-        ) : (
-          <Hint>No reviews yet — be the first after your visit.</Hint>
-        )}
-      </Section>
+        </Section>
 
-      <VisitUs />
+        <Section
+          id="reviews"
+          className="lg:px-0"
+          title="Reviews"
+          action={
+            overall ? (
+              <RatingBadge
+                rating={overall.rating}
+                count={overall.review_count}
+              />
+            ) : undefined
+          }
+        >
+          {reviews.length > 0 ? (
+            <Stack className="lg:grid lg:grid-cols-3 lg:gap-4">
+              {reviews.map((r, i) => (
+                <Reveal key={r.id} index={i}>
+                  <ReviewCard
+                    rating={r.rating}
+                    comment={r.comment}
+                    reviewer={r.reviewer}
+                    context={r.service_name}
+                  />
+                </Reveal>
+              ))}
+            </Stack>
+          ) : (
+            <Hint>No reviews yet — be the first after your visit.</Hint>
+          )}
+        </Section>
 
-      <Divider />
-      <Section>
-        <Button href="/book" block>
-          Book now
-        </Button>
-      </Section>
+        <VisitUs />
 
-      <PageFooter />
-    </AppShell>
+        <Divider />
+        <Section className="lg:px-0">
+          <Button href="/book" block className="lg:mx-auto lg:flex lg:max-w-sm">
+            Book now
+          </Button>
+        </Section>
+
+        <PageFooter />
+      </HomeContainer>
+    </HomeShell>
   );
 }
 
@@ -119,7 +147,11 @@ function ServiceSection({
 }) {
   if (items.length === 0) return null;
   return (
-    <Section title={title} action={<TextLink href={href}>See all</TextLink>}>
+    <Section
+      title={title}
+      className="lg:px-0"
+      action={<TextLink href={href}>See all</TextLink>}
+    >
       <Stack gap="sm">
         {items.map((s, i) => (
           <Reveal key={s.id} index={i}>
