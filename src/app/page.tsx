@@ -10,6 +10,7 @@ import { ShopService } from "@/components/ui/ShopService";
 import { MasterCard } from "@/components/ui/MasterCard";
 import { ReviewCard } from "@/components/ui/ReviewCard";
 import { Hint } from "@/components/ui/Hint";
+import { Reveal } from "@/components/ui/Reveal";
 import { getCatalog } from "@/lib/queries";
 import { buildMasters } from "@/lib/masters";
 import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
@@ -59,8 +60,10 @@ export default async function HomePage() {
         }
       >
         <Stack>
-          {masters.slice(0, 3).map((m) => (
-            <MasterCard key={m.id} master={m} href={`/services?staff=${m.id}`} />
+          {masters.slice(0, 3).map((m, i) => (
+            <Reveal key={m.id} index={i}>
+              <MasterCard master={m} href={`/services?staff=${m.id}`} />
+            </Reveal>
           ))}
         </Stack>
       </Section>
@@ -75,14 +78,15 @@ export default async function HomePage() {
       >
         {reviews.length > 0 ? (
           <Stack>
-            {reviews.map((r) => (
-              <ReviewCard
-                key={r.id}
-                rating={r.rating}
-                comment={r.comment}
-                reviewer={r.reviewer}
-                context={r.service_name}
-              />
+            {reviews.map((r, i) => (
+              <Reveal key={r.id} index={i}>
+                <ReviewCard
+                  rating={r.rating}
+                  comment={r.comment}
+                  reviewer={r.reviewer}
+                  context={r.service_name}
+                />
+              </Reveal>
             ))}
           </Stack>
         ) : (
@@ -117,16 +121,17 @@ function ServiceSection({
   return (
     <Section title={title} action={<TextLink href={href}>See all</TextLink>}>
       <Stack gap="sm">
-        {items.map((s) => (
-          <ShopService
-            key={s.id}
-            href={`/services/${s.slug}`}
-            name={s.name}
-            priceCents={s.price_cents}
-            durationMin={s.duration_min}
-            description={s.description}
-            photoUrl={s.photo_url}
-          />
+        {items.map((s, i) => (
+          <Reveal key={s.id} index={i}>
+            <ShopService
+              href={`/services/${s.slug}`}
+              name={s.name}
+              priceCents={s.price_cents}
+              durationMin={s.duration_min}
+              description={s.description}
+              photoUrl={s.photo_url}
+            />
+          </Reveal>
         ))}
       </Stack>
     </Section>

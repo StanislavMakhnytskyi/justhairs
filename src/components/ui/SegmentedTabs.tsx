@@ -2,12 +2,7 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
-import {
-  segmentedTrack,
-  segmentedItem,
-  segmentedItemActive,
-  segmentedItemIdle,
-} from "./segmented";
+import { segmentedTrack, segmentedItem, segmentedItemIdle } from "./segmented";
 
 export function SegmentedTabs<T extends string>({
   tabs,
@@ -20,8 +15,23 @@ export function SegmentedTabs<T extends string>({
   onChange: (v: T) => void;
   className?: string;
 }) {
+  const index = Math.max(
+    0,
+    tabs.findIndex((t) => t.value === value),
+  );
+  const n = tabs.length;
   return (
-    <div role="tablist" className={cn(segmentedTrack, className)}>
+    <div role="tablist" className={cn(segmentedTrack, "relative", className)}>
+      {/* Sliding pill: same width as one tab (track padding p-1, gap-1), moved
+          by whole tab-widths + gaps so it glides instead of jumping. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1 left-1 rounded-[6px] bg-surface-card shadow-[var(--shadow-sm)] transition-transform duration-250 ease-[var(--ease-out)]"
+        style={{
+          width: `calc((100% - 0.5rem - ${n - 1} * 0.25rem) / ${n})`,
+          transform: `translateX(calc(${index} * (100% + 0.25rem)))`,
+        }}
+      />
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -30,7 +40,8 @@ export function SegmentedTabs<T extends string>({
           onClick={() => onChange(t.value)}
           className={cn(
             segmentedItem,
-            value === t.value ? segmentedItemActive : segmentedItemIdle,
+            "relative",
+            value === t.value ? "text-text-primary" : segmentedItemIdle,
           )}
         >
           {t.label}
