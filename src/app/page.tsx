@@ -1,171 +1,64 @@
-import { HomeContainer, HomeShell } from "@/components/layout/HomeShell";
+import { HomeShell } from "@/components/layout/HomeShell";
 import { Hero } from "@/components/marketing/Hero";
 import { HomeNav } from "@/components/marketing/HomeNav";
-import { VisitUs } from "@/components/marketing/VisitUs";
-import { PageFooter } from "@/components/marketing/PageFooter";
-import { Button } from "@/components/ui/Button";
-import { Section, Stack } from "@/components/ui/Section";
-import { Divider, RatingBadge } from "@/components/ui/primitives";
-import { TextLink } from "@/components/ui/TextLink";
-import { ShopService } from "@/components/ui/ShopService";
-import { MasterCard } from "@/components/ui/MasterCard";
-import { ReviewCard } from "@/components/ui/ReviewCard";
-import { Hint } from "@/components/ui/Hint";
-import { Reveal } from "@/components/ui/Reveal";
+import { BackOfCard, ReplyCard } from "@/components/home/ClosingCards";
+import { MenuSheet, type MenuGroup } from "@/components/home/MenuSheet";
+import { ReviewSlips } from "@/components/home/ReviewSlips";
+import { TeamTiles } from "@/components/home/TeamTiles";
+import { VisitCard } from "@/components/home/VisitCard";
 import { getCatalog } from "@/lib/queries";
+import { formatDuration, formatPrice } from "@/lib/format";
 import { buildMasters } from "@/lib/masters";
-import {
-  getLatestReviews,
-  getOverallRating,
-  getRatingsMap,
-} from "@/lib/reviews";
+import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
 // Statically generated, refreshed every 10 minutes.
 export const revalidate = 600;
 
+const HOURS = ["Tue–Sat · 9:00–18:00", "Closed Sunday & Monday"];
+
 export default async function HomePage() {
-  const [
-    { services, staff, staffServices, workingHours },
-    reviews,
-    overall,
-    staffRatings,
-  ] = await Promise.all([
-    getCatalog(),
-    getLatestReviews(3),
-    getOverallRating(),
-    getRatingsMap("staff_ratings"),
-  ]);
+  const [{ services, staff, staffServices, workingHours }, reviews, overall, staffRatings] =
+    await Promise.all([
+      getCatalog(),
+      getLatestReviews(3),
+      getOverallRating(),
+      getRatingsMap("staff_ratings"),
+    ]);
 
-  const masters = buildMasters(
-    staff,
-    staffServices,
-    services,
-    workingHours,
-    staffRatings,
-  );
+  const masters = buildMasters(staff, staffServices, services, workingHours, staffRatings);
 
-  const men = services.filter((s) => s.category.gender === "men");
-  const women = services.filter((s) => s.category.gender === "women");
-  const popular = services.filter((s) => s.popular);
+  const toItem = (s: (typeof services)[number]) => ({
+    slug: s.slug,
+    name: s.name,
+    price: formatPrice(s.price_cents),
+    duration: formatDuration(s.duration_min),
+    description: s.description,
+    photoUrl: s.photo_url,
+  });
+  const groups: MenuGroup[] = [
+    { title: "Men", items: services.filter((s) => s.category.gender === "men").map(toItem) },
+    { title: "Women", items: services.filter((s) => s.category.gender === "women").map(toItem) },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <HomeShell>
       <HomeNav />
       <Hero />
-
-      <HomeContainer>
-        <div
-          id="services"
-          className="scroll-mt-20 lg:grid lg:grid-cols-3 lg:gap-x-8"
-        >
-          <ServiceSection
-            title="Men"
-            href="/services?category=men"
-            items={men.slice(0, 3)}
-          />
-          <ServiceSection
-            title="Women"
-            href="/services?category=women"
-            items={women.slice(0, 3)}
-          />
-          <ServiceSection title="Popular" href="/services" items={popular} />
-        </div>
-
-        <Section
-          id="team"
-          className="lg:px-0"
-          title="Our team"
-          action={
-            masters.length > 3 ? (
-              <TextLink href="/masters">See all</TextLink>
-            ) : undefined
-          }
-        >
-          <Stack className="lg:grid lg:grid-cols-3 lg:gap-4">
-            {masters.slice(0, 3).map((m, i) => (
-              <Reveal key={m.id} index={i}>
-                <MasterCard master={m} href={`/services?staff=${m.id}`} />
-              </Reveal>
-            ))}
-          </Stack>
-        </Section>
-
-        <Section
-          id="reviews"
-          className="lg:px-0"
-          title="Reviews"
-          action={
-            overall ? (
-              <RatingBadge
-                rating={overall.rating}
-                count={overall.review_count}
-              />
-            ) : undefined
-          }
-        >
-          {reviews.length > 0 ? (
-            <Stack className="lg:grid lg:grid-cols-3 lg:gap-4">
-              {reviews.map((r, i) => (
-                <Reveal key={r.id} index={i}>
-                  <ReviewCard
-                    rating={r.rating}
-                    comment={r.comment}
-                    reviewer={r.reviewer}
-                    context={r.service_name}
-                  />
-                </Reveal>
-              ))}
-            </Stack>
-          ) : (
-            <Hint>No reviews yet — be the first after your visit.</Hint>
-          )}
-        </Section>
-
-        <VisitUs />
-
-        <Divider />
-        <Section className="lg:px-0">
-          <Button href="/book" block className="lg:mx-auto lg:flex lg:max-w-sm">
-            Book now
-          </Button>
-        </Section>
-
-        <PageFooter />
-      </HomeContainer>
+      {groups.length > 0 && <MenuSheet groups={groups} hours={HOURS} />}
+      {masters.length > 0 && <TeamTiles masters={masters} />}
+      <ReviewSlips
+        reviews={reviews.map((r) => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          reviewer: r.reviewer,
+          context: r.service_name,
+        }))}
+        overall={overall}
+      />
+      <VisitCard hours={HOURS} />
+      <ReplyCard />
+      <BackOfCard />
     </HomeShell>
-  );
-}
-
-function ServiceSection({
-  title,
-  href,
-  items,
-}: {
-  title: string;
-  href: string;
-  items: Awaited<ReturnType<typeof getCatalog>>["services"];
-}) {
-  if (items.length === 0) return null;
-  return (
-    <Section
-      title={title}
-      className="lg:px-0"
-      action={<TextLink href={href}>See all</TextLink>}
-    >
-      <Stack gap="sm">
-        {items.map((s, i) => (
-          <Reveal key={s.id} index={i}>
-            <ShopService
-              href={`/services/${s.slug}`}
-              name={s.name}
-              priceCents={s.price_cents}
-              durationMin={s.duration_min}
-              description={s.description}
-              photoUrl={s.photo_url}
-            />
-          </Reveal>
-        ))}
-      </Stack>
-    </Section>
   );
 }

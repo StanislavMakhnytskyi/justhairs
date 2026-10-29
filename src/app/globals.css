@@ -237,6 +237,90 @@ button:disabled {
   transition-delay: calc(var(--i, 0) * 70ms);
 }
 
+/* ── Print-object shapes (home page) ─────────────────────────────────────────
+   Filled panels with real edges, cut with masks — never outlined boxes. */
+
+/* Shallow scallops along the top and bottom edge (menu sheet). */
+.scallop-y {
+  --r: 9px;
+  -webkit-mask:
+    radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--r) at 50% 100%, #0000 97%, #000) bottom / calc(var(--r) * 2.6) 51% repeat-x;
+  mask:
+    radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--r) at 50% 100%, #0000 97%, #000) bottom / calc(var(--r) * 2.6) 51% repeat-x;
+}
+
+/* Scallops along the top edge only (the back of the card). */
+.scallop-top {
+  --r: 14px;
+  -webkit-mask: radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 100% repeat-x;
+  mask: radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 100% repeat-x;
+}
+
+/* Appointment ticket: a notch on each side of the perforation. The stub is
+   7.5rem tall on a phone (perforation runs across) and 16rem wide from lg
+   (perforation runs down). */
+.ticket {
+  --n: 16px;
+  --stub: calc(100% - 7.5rem);
+  -webkit-mask:
+    radial-gradient(circle var(--n) at 0 var(--stub), #0000 97%, #000),
+    radial-gradient(circle var(--n) at 100% var(--stub), #0000 97%, #000);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle var(--n) at 0 var(--stub), #0000 97%, #000),
+    radial-gradient(circle var(--n) at 100% var(--stub), #0000 97%, #000);
+  mask-composite: intersect;
+}
+@media (min-width: 1024px) {
+  .ticket {
+    --stub: calc(100% - 16rem);
+    -webkit-mask:
+      radial-gradient(circle var(--n) at var(--stub) 0, #0000 97%, #000),
+      radial-gradient(circle var(--n) at var(--stub) 100%, #0000 97%, #000);
+    -webkit-mask-composite: source-in;
+    mask:
+      radial-gradient(circle var(--n) at var(--stub) 0, #0000 97%, #000),
+      radial-gradient(circle var(--n) at var(--stub) 100%, #0000 97%, #000);
+    mask-composite: intersect;
+  }
+}
+
+/* Perforation: a row of round dots, 4px or larger. */
+.perforation {
+  border: 0 dotted var(--border-strong);
+  border-top-width: 4px;
+}
+@media (min-width: 1024px) {
+  .perforation {
+    border-top-width: 0;
+    border-left-width: 4px;
+  }
+}
+
+/* The required map attribution stays, but inside the page margin. */
+.map-margins {
+  --m: max(1.25rem, calc((100vw - 72rem) / 2 + 2.5rem));
+}
+.map-margins .leaflet-bottom.leaflet-right {
+  right: var(--m);
+  bottom: 0.75rem;
+  max-width: calc(100% - 2 * var(--m));
+}
+.map-margins .leaflet-control-attribution {
+  font-size: 13px;
+  text-align: right;
+}
+
+/* Reply card sits on the page slightly askew; the section crops its bottom. */
+.tilt-2 {
+  transform: rotate(2deg);
+}
+.tilt-1 {
+  transform: rotate(1deg);
+}
+
 /* Sweeping bar used for pending navigation. */
 @keyframes indeterminate {
   0% {

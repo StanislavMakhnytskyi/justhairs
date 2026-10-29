@@ -2,6 +2,7 @@
 
 import { Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { HERO_IMAGE } from "@/lib/assets";
 
 type Connection = { saveData?: boolean; effectiveType?: string };
 
@@ -72,6 +73,7 @@ export function HeroVideo({ mp4, webm }: { mp4: string; webm: string }) {
         playsInline
         autoPlay
         preload="metadata"
+        poster={HERO_IMAGE}
         aria-hidden="true"
         tabIndex={-1}
         onCanPlay={() => setReady(true)}
@@ -86,7 +88,7 @@ export function HeroVideo({ mp4, webm }: { mp4: string; webm: string }) {
         type="button"
         onClick={toggle}
         aria-label={paused ? "Play background video" : "Pause background video"}
-        className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-pill bg-black/30 text-white backdrop-blur-sm transition-colors duration-150 hover:bg-black/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="absolute right-[var(--m)] top-5 z-10 [--m:max(1.25rem,calc((100vw_-_72rem)/2_+_2.5rem))] grid size-9 place-items-center rounded-pill bg-black/30 text-white backdrop-blur-sm transition-colors duration-150 hover:bg-black/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         {paused ? <Play size={16} aria-hidden /> : <Pause size={16} aria-hidden />}
       </button>

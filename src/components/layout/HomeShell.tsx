@@ -1,8 +1,7 @@
 import { cn } from "@/lib/cn";
 
-/** Home-page frame: the same 480px mobile column as AppShell, opening up to
- *  the full viewport from `lg` so the page can lay out as a wide marketing
- *  page. Every other route keeps AppShell. */
+/** Home-page frame: full-width, because the page is a stack of colour bands
+ *  whose content sets its own measure. Every other route keeps AppShell. */
 export function HomeShell({
   children,
   className,
@@ -13,7 +12,7 @@ export function HomeShell({
   return (
     <main
       className={cn(
-        "mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-surface-app lg:max-w-none",
+        "mx-auto flex min-h-dvh w-full flex-col bg-surface-app",
         className,
       )}
     >

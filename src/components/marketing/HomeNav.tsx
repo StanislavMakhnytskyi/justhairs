@@ -9,20 +9,21 @@ const LINKS = [
   { href: "#visit", label: "Visit us" },
 ];
 
-/** Desktop-only sticky top bar for the home page (the mobile layout has none). */
+/** Desktop-only sticky top bar for the home page (the mobile layout has none).
+ *  A plain solid bar: wordmark, four links, one action. */
 export function HomeNav() {
   return (
-    <header className="sticky top-0 z-40 hidden border-b border-border-default bg-surface-app/85 backdrop-blur-md lg:block">
+    <header className="sticky top-0 z-40 hidden bg-[var(--neutral-900)] lg:block">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-10">
         <Link href="/" aria-label="justhairs home" className="mr-auto">
-          <Logo />
+          <Logo tone="onBrand" />
         </Link>
         <nav aria-label="Sections" className="flex gap-7">
           {LINKS.map((l) => (
             <a
               key={l.href}
               href={l.href}
-              className="text-label font-bold text-text-secondary transition-colors duration-150 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+              className="text-label font-bold text-white/80 transition-colors duration-150 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
               {l.label}
             </a>
