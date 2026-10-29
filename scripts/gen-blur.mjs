@@ -32,6 +32,8 @@ async function listAll() {
     for (const entry of data ?? []) {
       // directories come back without metadata
       if (!entry.metadata) continue;
+      // The bucket also holds the hero video; only images get a blur preview.
+      if (!/\.(webp|png|jpe?g|avif)$/i.test(entry.name)) continue;
       paths.push(prefix ? `${prefix}/${entry.name}` : entry.name);
     }
   }
