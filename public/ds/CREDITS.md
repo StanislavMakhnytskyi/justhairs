@@ -20,6 +20,14 @@ this repo. Re-upload with `scripts/` if the bucket is recreated.
 | `womens-treatment` | `photo-1595476108010-b4d1f102b1b1` |
 | `hero` | `photo-1521590832167-7bcbfaa6381f` |
 
+## Hero video (`assets/hero.mp4`, `assets/hero.webm`)
+
+"Hairdresser's tools" from [Coverr](https://coverr.co/videos/hairdressers-tools-px2xmoqn61),
+licensed royalty-free for commercial use with no attribution required (per the
+clip's Coverr page). Re-encoded to a short, silent 720p MP4 + WebM loop and
+served from the Supabase Storage `assets` bucket. Upload with
+`scripts/upload-hero-video.mjs`; enable with `NEXT_PUBLIC_HERO_VIDEO=1`.
+
 ## Staff (`assets/staff/*.webp`)
 
 | Slug | Unsplash photo ID |
