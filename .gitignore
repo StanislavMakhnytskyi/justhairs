@@ -48,3 +48,6 @@ next-env.d.ts
 # Supabase CLI
 /supabase/.temp
 /supabase/.branches
+
+# design-skill working files
+.taste-skill/

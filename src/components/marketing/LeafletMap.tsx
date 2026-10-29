@@ -20,7 +20,7 @@ function tileUrl() {
   return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/${style}/MapServer/tile/{z}/{y}/{x}`;
 }
 
-export function LeafletMap() {
+export function LeafletMap({ className = "h-44" }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function LeafletMap() {
       ref={ref}
       role="img"
       aria-label={`Map showing ${SALON.name}`}
-      className="h-44 w-full"
+      className={`w-full ${className}`}
     />
   );
 }
