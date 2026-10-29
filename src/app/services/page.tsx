@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AppShell } from "@/components/layout/AppShell";
+import { BookShell } from "@/components/ticket/BookShell";
 import { TopBar } from "@/components/ui/TopBar";
 import { getCatalog } from "@/lib/queries";
 import { ServiceCategoryTabs } from "./ServiceCategoryTabs";
@@ -12,9 +12,9 @@ export default async function ServicesPage() {
   const women = services.filter((s) => s.category.gender === "women");
 
   return (
-    <AppShell>
+    <BookShell>
       <TopBar title="Services" />
-      <div className="p-gutter">
+      <div className="p-gutter pb-8">
         {/* KNOWN ISSUE (CODE_REVIEW.md #18): fallback={null} means the
             page's actual content — the service list — is an empty shell
             until client hydration resolves useSearchParams(). SkeletonList
@@ -28,6 +28,6 @@ export default async function ServicesPage() {
           />
         </Suspense>
       </div>
-    </AppShell>
+    </BookShell>
   );
 }

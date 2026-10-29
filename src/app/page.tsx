@@ -8,6 +8,7 @@ import { TeamTiles } from "@/components/home/TeamTiles";
 import { VisitCard } from "@/components/home/VisitCard";
 import { getCatalog } from "@/lib/queries";
 import { formatDuration, formatPrice } from "@/lib/format";
+import { SALON_TZ } from "@/lib/salon";
 import { buildMasters } from "@/lib/masters";
 import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews";
 
@@ -15,6 +16,14 @@ import { getLatestReviews, getOverallRating, getRatingsMap } from "@/lib/reviews
 export const revalidate = 600;
 
 const HOURS = ["Tue–Sat · 9:00–18:00", "Closed Sunday & Monday"];
+
+/** "Open today 9:00–18:00" or "Closed today", on the salon's clock. */
+function openToday(): string {
+  const day = new Date().toLocaleDateString("en-US", { weekday: "short", timeZone: SALON_TZ });
+  return ["Tue", "Wed", "Thu", "Fri", "Sat"].includes(day)
+    ? "Open today 9:00–18:00"
+    : "Closed today · open Tue–Sat";
+}
 
 export default async function HomePage() {
   const [{ services, staff, staffServices, workingHours }, reviews, overall, staffRatings] =
@@ -43,7 +52,7 @@ export default async function HomePage() {
   return (
     <HomeShell>
       <HomeNav />
-      <Hero />
+      <Hero overall={overall} openToday={openToday()} />
       {groups.length > 0 && <MenuSheet groups={groups} hours={HOURS} />}
       {masters.length > 0 && <TeamTiles masters={masters} />}
       <ReviewSlips

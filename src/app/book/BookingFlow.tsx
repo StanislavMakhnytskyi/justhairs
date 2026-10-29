@@ -11,12 +11,12 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { AppShell } from "@/components/layout/AppShell";
+import { BookShell } from "@/components/ticket/BookShell";
+import { TicketPanel } from "@/components/ticket/TicketPanel";
 import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { StickyBar } from "@/components/ui/StickyBar";
 import { StepTabs } from "@/components/ui/SegmentedTabs";
-import { Stack } from "@/components/ui/Section";
 import { Hint } from "@/components/ui/Hint";
 import { SummaryList, SummaryRow } from "@/components/ui/SummaryList";
 import { ShopService } from "@/components/ui/ShopService";
@@ -154,6 +154,10 @@ export function BookingFlow({
     return staff.filter((s) => ids.has(s.id));
   }, [service, staff, staffServices]);
 
+  const selectedDay = useMemo(
+    () => (dateStr ? new Date(`${dateStr}T00:00:00`) : null),
+    [dateStr],
+  );
   const dayTimes = useMemo(
     () => (dateStr ? dayTimeGrid(dateStr) : []),
     [dateStr],
@@ -163,18 +167,14 @@ export function BookingFlow({
     [slots],
   );
 
-  // KNOWN ISSUE (CODE_REVIEW.md #15): an unrecognized ?step= value (a typo,
-  // a hand-edited URL) makes findIndex return -1 here, and none of the
-  // step===0..3 branches below render — the user lands on a blank flow with
-  // no service list and no way back. Should fall back to inferring the step
-  // from which fields are actually filled when stepParam doesn't match one.
-  const step: number = (() => {
-    if (stepParam) return STEPS.findIndex((s) => s.toLowerCase().startsWith(stepParam));
-    if (!service) return 0;
-    if (!staffId) return 1;
-    if (!time) return 2;
-    return 3;
-  })();
+  // Which step to show. An explicit ?step= wins, but a value we don't know
+  // (a typo, a hand-edited URL) falls back to the first step that still has
+  // something to choose, so the flow never renders blank.
+  const inferredStep = !service ? 0 : !staffId ? 1 : !time ? 2 : 3;
+  const namedStep = stepParam ? STEP_PARAM.indexOf(stepParam) : -1;
+  const rawStep = namedStep >= 0 ? namedStep : inferredStep;
+  // Never show a step whose inputs are missing (e.g. ?step=review with no time).
+  const step: number = Math.min(rawStep, inferredStep);
 
   const setParams = useCallback(
     (patch: Record<string, string | null>, opts?: { push?: boolean }) => {
@@ -386,13 +386,19 @@ export function BookingFlow({
     if (!service || !time) return;
     setError(null);
     startTransition(async () => {
-      const res = await createBooking({
-        serviceId: service.id,
-        staffId: staffId === "any" || !staffId ? null : staffId,
-        startsAt: time,
-      });
-      if (res.ok) router.push(`/book/pay/${res.data.id}`);
-      else setError(res.error);
+      try {
+        const res = await createBooking({
+          serviceId: service.id,
+          staffId: staffId === "any" || !staffId ? null : staffId,
+          startsAt: time,
+        });
+        if (res.ok) router.push(`/book/pay/${res.data.id}`);
+        else setError(res.error);
+      } catch {
+        // A rejected server action (dropped connection) must not escape to the
+        // error boundary — the held choices are all still in the URL.
+        setError("We couldn't reach the salon. Check your connection and try again.");
+      }
     });
   }
 
@@ -404,18 +410,31 @@ export function BookingFlow({
       : eligibleStaff.find((s) => s.id === staffId)?.name ?? null;
 
   return (
-    <AppShell>
+    <BookShell
+      aside={
+        <TicketPanel
+          serviceName={service?.name ?? null}
+          categoryName={service?.category.name}
+          photoUrl={service?.photo_url}
+          priceCents={service?.price_cents ?? null}
+          durationMin={service?.duration_min ?? null}
+          staffName={chosenStaffName}
+          time={time}
+          step={step}
+        />
+      }
+    >
       <TopBar title="Book appointment" onBack={goBack} />
-      <div className="p-gutter">
+      <div className="px-gutter pb-2 pt-5">
         <StepTabs steps={STEPS} current={step} onStepClick={goToStep} />
       </div>
 
       <div
         key={step}
-        className="flex flex-1 flex-col px-gutter pb-4 motion-safe:animate-fade-in-up"
+        className="flex flex-1 flex-col px-gutter pb-6 pt-3 motion-safe:animate-fade-in-up"
       >
         {step === 0 && (
-          <Stack gap="sm">
+          <div className="flex flex-col">
             {services.map((s) => (
               <ShopService
                 key={s.id}
@@ -439,11 +458,11 @@ export function BookingFlow({
                 }
               />
             ))}
-          </Stack>
+          </div>
         )}
 
         {step === 1 && service && (
-          <Stack gap="sm">
+          <div className="flex flex-col">
             {eligibleStaff.length > 1 && (
               <StaffCard
                 name="Any specialist"
@@ -468,13 +487,13 @@ export function BookingFlow({
                 }}
               />
             ))}
-          </Stack>
+          </div>
         )}
 
         {step === 2 && service && (
           <div className="flex flex-col gap-4">
             <DateStrip
-              value={dateStr ? new Date(`${dateStr}T00:00:00`) : null}
+              value={selectedDay}
               isEnabled={(d) =>
                 openWeekdays.includes(d.getDay()) &&
                 !emptyDays.has(format(d, "yyyy-MM-dd"))
@@ -553,10 +572,9 @@ export function BookingFlow({
           </SummaryList>
         )}
         {step === 3 && error && (
-          // KNOWN ISSUE (CODE_REVIEW.md #16): missing role="alert" — the
-          // equivalent error text in PayForm has it; a screen-reader user
-          // who fails to confirm here gets no auditory feedback at all.
-          <p className="mt-3 text-label text-error">{error}</p>
+          <p className="mt-3 text-label font-medium text-error" role="alert">
+            {error}
+          </p>
         )}
       </div>
 
@@ -567,6 +585,6 @@ export function BookingFlow({
           </Button>
         </StickyBar>
       )}
-    </AppShell>
+    </BookShell>
   );
 }

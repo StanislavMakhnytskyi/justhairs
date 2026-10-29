@@ -12,7 +12,7 @@ export function HomeShell({
   return (
     <main
       className={cn(
-        "mx-auto flex min-h-dvh w-full flex-col bg-surface-app",
+        "mx-auto flex min-h-dvh w-full flex-col bg-surface-app lg:bg-surface-sunken",
         className,
       )}
     >

@@ -1,6 +1,6 @@
-import { Children, Fragment, isValidElement } from "react";
-import { Card, Divider } from "./primitives";
+import { Children, isValidElement } from "react";
 
+/** One printed line: label, a dotted leader, value. */
 export function SummaryRow({
   label,
   value,
@@ -11,13 +11,17 @@ export function SummaryRow({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
+    <div className="flex items-baseline gap-2">
       <span className="text-label text-text-secondary">{label}</span>
+      <span
+        aria-hidden
+        className="min-w-4 flex-1 translate-y-[-3px] border-b-4 border-dotted border-border-strong"
+      />
       <span
         className={
           strong
-            ? "text-right text-subhead text-text-primary"
-            : "text-right text-body font-medium text-text-primary"
+            ? "text-right text-heading tabular-nums text-text-primary"
+            : "text-right text-body font-bold text-text-primary"
         }
       >
         {value}
@@ -26,7 +30,7 @@ export function SummaryRow({
   );
 }
 
-/** A card of SummaryRows, hairline-divided. */
+/** The ticket's filled-in lines. No box — it sits directly on the paper. */
 export function SummaryList({
   children,
   footnote,
@@ -36,16 +40,9 @@ export function SummaryList({
 }) {
   const rows = Children.toArray(children).filter(isValidElement);
   return (
-    <Card>
-      {rows.map((row, i) => (
-        <Fragment key={i}>
-          {i > 0 && <Divider className="my-3" />}
-          {row}
-        </Fragment>
-      ))}
-      {footnote && (
-        <p className="mt-4 text-caption text-text-secondary">{footnote}</p>
-      )}
-    </Card>
+    <div className="flex flex-col gap-5">
+      {rows}
+      {footnote && <p className="text-caption text-text-secondary">{footnote}</p>}
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/AppShell";
+import { BookShell } from "@/components/ticket/BookShell";
 import { TopBar } from "@/components/ui/TopBar";
 import { RatingBadge } from "@/components/ui/primitives";
 import { SmoothImage } from "@/components/ui/SmoothImage";
@@ -60,7 +60,7 @@ export default async function ServiceDetailPage({
     .join(" · ");
 
   return (
-    <AppShell>
+    <BookShell>
       <TopBar title={service.name} />
       <div className="flex-1">
         {service.photo_url && (
@@ -98,6 +98,6 @@ export default async function ServiceDetailPage({
       </div>
 
       <BookCta slug={service.slug} priceLabel={formatPrice(service.price_cents)} />
-    </AppShell>
+    </BookShell>
   );
 }

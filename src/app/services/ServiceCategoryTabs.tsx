@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
-import { Stack } from "@/components/ui/Section";
 import { ShopService } from "@/components/ui/ShopService";
 import { TextLink } from "@/components/ui/TextLink";
 import { EmptyState } from "@/components/ui/primitives";
@@ -67,7 +66,7 @@ export function ServiceCategoryTabs({
   return (
     <div className="flex flex-col gap-4">
       {activeStaff && (
-        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-brand-subtle px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-brand-subtle px-4 py-3">
           <p className="text-label text-text-primary">
             Showing services with <span className="font-bold">{activeStaff.name}</span>
           </p>
@@ -89,7 +88,7 @@ export function ServiceCategoryTabs({
           description={activeStaff ? "Try the other tab, or clear the filter above." : undefined}
         />
       ) : (
-        <Stack gap="sm">
+        <div className="flex flex-col">
           {shown.map((s) => (
             <ShopService
               key={s.id}
@@ -105,7 +104,7 @@ export function ServiceCategoryTabs({
               photoUrl={s.photo_url}
             />
           ))}
-        </Stack>
+        </div>
       )}
     </div>
   );

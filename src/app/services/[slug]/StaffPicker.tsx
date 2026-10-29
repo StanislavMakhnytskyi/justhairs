@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Stack } from "@/components/ui/Section";
 import { StaffCard } from "@/components/ui/StaffCard";
 import type { Staff } from "@/lib/supabase/types";
 
@@ -12,7 +11,7 @@ export function StaffPicker({ slug, staff }: { slug: string; staff: Staff[] }) {
   const selected = params.get("staff");
 
   return (
-    <Stack gap="sm">
+    <div className="flex flex-col">
       {staff.map((s) => (
         <StaffCard
           key={s.id}
@@ -23,6 +22,6 @@ export function StaffPicker({ slug, staff }: { slug: string; staff: Staff[] }) {
           href={`/book?service=${slug}&staff=${s.id}&step=date`}
         />
       ))}
-    </Stack>
+    </div>
   );
 }

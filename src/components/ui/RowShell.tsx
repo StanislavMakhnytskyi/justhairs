@@ -6,21 +6,18 @@ import { LinkPendingBar } from "./LinkPendingBar";
 /**
  * Shared shell for the app's tappable list rows (services, stylists).
  *
- * Elevation language: a selectable control carries a visible 1px border and
- * NO shadow — that's what separates "tap to choose" from a raised info card
- * (shadow, no border). Selected swaps the border to brand + a subtle tint.
- *
- * The trailing indicator reflects what the row does — never a button-shaped
- * label that isn't a button:
+ * Printed-list language: a row is a line on the card, separated from the next
+ * by a dotted rule — no box around it. Selected fills the line with the brand
+ * tint and drops the rule; the trailing indicator says what the row does:
  *   selected            → filled brand check
  *   link (href)         → chevron (navigates)
  *   select (onClick)    → hollow ring (pick one), or `end` if provided
  *   static              → `end` or nothing
  */
 const shell =
-  "relative flex w-full items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3 text-left transition-[color,background-color,border-color,transform,translate] duration-150 ease-[var(--ease-out)]";
+  "relative -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 overflow-hidden rounded-[var(--radius-sm)] border-b-4 border-dotted px-2 py-3 text-left transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)] last:border-b-transparent";
 const interactive =
-  "hover:border-brand [@media(hover:hover)]:motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2";
+  "hover:bg-surface-sunken motion-safe:active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2";
 
 function RowEnd({
   selected,
@@ -70,9 +67,7 @@ export function RowShell({
   const cls = cn(
     shell,
     (href || onClick) && interactive,
-    selected
-      ? "border-brand bg-brand-subtle"
-      : "border-border-strong bg-surface-card",
+    selected ? "border-transparent bg-brand-subtle" : "border-border-default",
     className,
   );
 

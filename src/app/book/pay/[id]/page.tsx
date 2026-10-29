@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/layout/AppShell";
+import { BookShell } from "@/components/ticket/BookShell";
 import { SummaryList, SummaryRow } from "@/components/ui/SummaryList";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 import { SALON_TZ } from "@/lib/salon";
@@ -31,9 +31,9 @@ export default async function PayPage({
     `&date=${day}&time=${encodeURIComponent(appt.starts_at)}&step=review`;
 
   return (
-    <AppShell>
+    <BookShell>
       <PayTopBar appointmentId={appt.id} backHref={backHref} />
-      <div className="flex flex-col gap-6 px-gutter pb-10 pt-2">
+      <div className="flex flex-1 flex-col gap-6 px-gutter pb-8 pt-6">
         <SummaryList>
           <SummaryRow label="Service" value={appt.service.name} />
           <SummaryRow label="Specialist" value={appt.staff?.name ?? "Any specialist"} />
@@ -42,8 +42,10 @@ export default async function PayPage({
           <SummaryRow label="Total" value={formatPrice(appt.price_cents)} strong />
         </SummaryList>
 
+        <div className="cut -mx-gutter" aria-hidden />
+
         <PayForm appointmentId={appt.id} priceLabel={formatPrice(appt.price_cents)} />
       </div>
-    </AppShell>
+    </BookShell>
   );
 }
