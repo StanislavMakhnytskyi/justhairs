@@ -45,6 +45,8 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
   --radius-btn: 10px;
+  /* big rounded panels of the desktop bento layout */
+  --radius-tile: 28px;
 
   /* one horizontal page gutter: px-gutter, gap-gutter, -mx-gutter, … */
   --spacing-gutter: var(--gutter);
@@ -73,6 +75,14 @@
   /* Page-load entrance for the hero copy. `backwards` holds the first frame
      during the stagger delay; it only runs once, on first paint. */
   --animate-rise: rise 560ms cubic-bezier(0.2, 0, 0, 1) backwards;
+  /* The ticket coming off the printer, then the stub following it. */
+  --animate-print: print 760ms cubic-bezier(0.2, 0, 0, 1) backwards;
+  /* Rubber stamp landing on the page. */
+  --animate-stamp: stamp 420ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  /* A card dropped on the table: starts tilted further, settles to its angle. */
+  /* The floating nav drops in once, on first paint. */
+  --animate-pill-in: pill-in 600ms cubic-bezier(0.2, 0, 0, 1) backwards;
+  --animate-settle: settle 700ms cubic-bezier(0.2, 0, 0, 1) backwards;
 
   /* Type scale — named steps with locked line-height / tracking / weight, so
      every `text-label` renders identically wherever it lands. Components use
@@ -217,6 +227,52 @@ button:disabled {
   }
 }
 
+@keyframes print {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.7) rotate(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(24px) rotate(calc(var(--tilt, 0deg) + 5deg));
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--tilt, 0deg));
+  }
+}
+
 /* Stagger: set --i on the element (0, 1, 2…). */
 .stagger {
   animation-delay: calc(var(--i, 0) * 80ms);
@@ -258,24 +314,24 @@ button:disabled {
   mask: radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 100% repeat-x;
 }
 
-/* Appointment ticket: a notch on each side of the perforation. The stub is
-   7.5rem tall on a phone (perforation runs across) and 16rem wide from lg
-   (perforation runs down). */
-.ticket {
-  --n: 16px;
-  --stub: calc(100% - 7.5rem);
+/* Hero ticket: a punch out of each side edge. On a phone it is one piece, so
+   the punches sit mid-height; from lg the stub is 13rem wide and the punches
+   sit top and bottom on the perforation line. */
+.ticket-hero {
+  --n: 12px;
   -webkit-mask:
-    radial-gradient(circle var(--n) at 0 var(--stub), #0000 97%, #000),
-    radial-gradient(circle var(--n) at 100% var(--stub), #0000 97%, #000);
+    radial-gradient(circle var(--n) at 0 50%, #0000 97%, #000),
+    radial-gradient(circle var(--n) at 100% 50%, #0000 97%, #000);
   -webkit-mask-composite: source-in;
   mask:
-    radial-gradient(circle var(--n) at 0 var(--stub), #0000 97%, #000),
-    radial-gradient(circle var(--n) at 100% var(--stub), #0000 97%, #000);
+    radial-gradient(circle var(--n) at 0 50%, #0000 97%, #000),
+    radial-gradient(circle var(--n) at 100% 50%, #0000 97%, #000);
   mask-composite: intersect;
 }
 @media (min-width: 1024px) {
-  .ticket {
-    --stub: calc(100% - 16rem);
+  .ticket-hero {
+    --n: 16px;
+    --stub: calc(100% - 13rem);
     -webkit-mask:
       radial-gradient(circle var(--n) at var(--stub) 0, #0000 97%, #000),
       radial-gradient(circle var(--n) at var(--stub) 100%, #0000 97%, #000);
@@ -297,6 +353,41 @@ button:disabled {
     border-top-width: 0;
     border-left-width: 4px;
   }
+}
+
+/* ── Booking: the same appointment card, one step at a time ──────────────────
+   A coloured band with a paper card on it. `.cut` is a perforation with a
+   notch bitten out of each edge; the notches are band-coloured discs, so a cut
+   can sit anywhere in the card (and ride along with the sticky stub). */
+.book-band {
+  --band: var(--brand);
+  /* A soft mesh: lighter glow top-left, deeper pool bottom-right. Kept faint
+     at the centre so the band-coloured `.cut` notches still match it. */
+  background:
+    radial-gradient(60rem 36rem at 8% -8%, color-mix(in oklab, var(--band) 82%, white), transparent 70%),
+    radial-gradient(52rem 36rem at 100% 108%, color-mix(in oklab, var(--band) 80%, black), transparent 70%),
+    var(--band);
+}
+.cut {
+  position: relative;
+  height: 0;
+  border-top: 4px dotted var(--border-strong);
+}
+.cut::before,
+.cut::after {
+  content: "";
+  position: absolute;
+  top: -14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--band, var(--brand));
+}
+.cut::before {
+  left: -12px;
+}
+.cut::after {
+  right: -12px;
 }
 
 /* The required map attribution stays, but inside the page margin. */

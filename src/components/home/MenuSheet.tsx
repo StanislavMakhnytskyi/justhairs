@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Reveal } from "@/components/ui/Reveal";
 import { SmoothImage } from "@/components/ui/SmoothImage";
 import { cn } from "@/lib/cn";
 
@@ -32,12 +33,12 @@ export function MenuSheet({ groups, hours }: { groups: MenuGroup[]; hours: strin
     <section
       id="services"
       aria-labelledby="menu-title"
-      className="scroll-mt-16 bg-brand px-gutter py-14 text-white lg:px-10 lg:py-28"
+      className="scroll-mt-24 bg-brand px-gutter py-14 text-white lg:mx-4 lg:mt-4 lg:rounded-tile lg:px-10 lg:py-24"
     >
       <div className="mx-auto max-w-6xl lg:grid lg:grid-cols-2 lg:items-start lg:gap-16">
         {/* Preview frame — desktop only; one frame, rows swap what it shows. */}
         <div className="sticky top-24 hidden lg:block" aria-hidden>
-          <div className="relative aspect-[4/5] w-full max-w-[28rem] overflow-hidden bg-[var(--neutral-900)]/20">
+          <div className="relative aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-[1.5rem] bg-[var(--neutral-900)]/20">
             {withPhoto.map((i) => (
               <SmoothImage
                 key={i.slug}
@@ -53,13 +54,17 @@ export function MenuSheet({ groups, hours }: { groups: MenuGroup[]; hours: strin
             ))}
           </div>
           {shown && (
-            <p className="mt-4 text-heading">
+            <p className="mt-4 inline-flex items-baseline gap-2 rounded-pill border border-white/25 bg-white/10 px-4 py-2 text-label font-bold backdrop-blur-md">
               {shown.name} <span className="tabular-nums opacity-80">· {shown.price}</span>
             </p>
           )}
         </div>
 
-        <div className="scallop-y mx-auto w-full max-w-[40rem] bg-surface-card px-7 py-16 text-text-primary lg:px-16 lg:py-20">
+        <Reveal className="mx-auto w-full max-w-[40rem]">
+        <div className="scallop-y w-full bg-surface-card px-7 py-16 text-text-primary lg:px-16 lg:py-20">
+          <p className="mb-3 text-center text-label font-bold uppercase tracking-[0.16em] text-text-secondary">
+            01 — Services
+          </p>
           <h2 id="menu-title" className="text-center text-display">
             Services &amp; prices
           </h2>
@@ -69,10 +74,13 @@ export function MenuSheet({ groups, hours }: { groups: MenuGroup[]; hours: strin
 
           {groups.map((g) => (
             <div key={g.title} className="mt-14">
-              <h3 className="text-center text-heading">{g.title}</h3>
+              <Reveal>
+                <h3 className="text-center text-heading">{g.title}</h3>
+              </Reveal>
               <ul className="mx-auto mt-6 max-w-[26rem] space-y-5">
-                {g.items.map((i) => (
+                {g.items.map((i, n) => (
                   <li key={i.slug}>
+                    <Reveal index={n % 5}>
                     <Link
                       href={`/services/${i.slug}`}
                       onMouseEnter={() => setHovered(i.slug)}
@@ -106,6 +114,7 @@ export function MenuSheet({ groups, hours }: { groups: MenuGroup[]; hours: strin
                         </span>
                       </span>
                     </Link>
+                    </Reveal>
                   </li>
                 ))}
               </ul>
@@ -120,6 +129,7 @@ export function MenuSheet({ groups, hours }: { groups: MenuGroup[]; hours: strin
             ))}
           </p>
         </div>
+        </Reveal>
       </div>
     </section>
   );

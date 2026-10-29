@@ -52,7 +52,8 @@ export function SegmentedTabs<T extends string>({
 }
 
 /**
- * Step indicator for the booking flow. Completed steps become buttons when
+ * Step indicator for the booking flow: numbered stubs joined by a dotted
+ * perforation. Done steps carry a stamped check and become buttons when
  * `onStepClick` is given, so the user can jump back to an earlier step.
  */
 export function StepTabs({
@@ -65,7 +66,7 @@ export function StepTabs({
   onStepClick?: (index: number) => void;
 }) {
   return (
-    <ol className="flex gap-2">
+    <ol className="flex">
       {steps.map((s, i) => {
         const done = i < current;
         const active = i === current;
@@ -74,13 +75,21 @@ export function StepTabs({
           <>
             <span
               className={cn(
-                "block h-1 rounded-full",
-                done || active ? "bg-brand" : "bg-border-default",
+                "relative z-10 mx-auto grid size-7 place-items-center rounded-full text-caption font-bold ring-4 ring-surface-card transition-colors duration-200 ease-[var(--ease-out)]",
+                done && "bg-brand text-text-on-brand",
+                active && "bg-[var(--neutral-900)] text-white",
+                !done && !active && "border-2 border-dashed border-border-strong text-text-tertiary",
               )}
-            />
+            >
+              {done ? (
+                <Check size={14} strokeWidth={3} aria-hidden />
+              ) : (
+                <span aria-hidden>{i + 1}</span>
+              )}
+            </span>
             <span
               className={cn(
-                "mt-2 flex items-center gap-1 text-caption font-bold",
+                "mt-1.5 block text-caption font-bold",
                 active
                   ? "text-text-primary"
                   : done
@@ -89,26 +98,27 @@ export function StepTabs({
                 clickable && "group-hover:text-brand",
               )}
             >
-              {done && (
-                <Check
-                  size={12}
-                  strokeWidth={3}
-                  className="shrink-0 text-brand"
-                  aria-hidden
-                />
-              )}
               {s}
             </span>
           </>
         );
         return (
-          <li key={s} className="flex-1">
+          <li
+            key={s}
+            className={cn(
+              "relative flex-1 text-center",
+              // dotted stretch back to the previous stub
+              i > 0 &&
+                "before:absolute before:right-1/2 before:top-3 before:w-full before:border-t-4 before:border-dotted",
+              i > 0 && (done || active ? "before:border-brand" : "before:border-border-strong"),
+            )}
+          >
             {clickable ? (
               <button
                 type="button"
                 onClick={() => onStepClick(i)}
                 aria-label={`Back to ${s}`}
-                className="group block w-full rounded-[6px] text-left focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4"
+                className="group block w-full rounded-[6px] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
               >
                 {Inner}
               </button>

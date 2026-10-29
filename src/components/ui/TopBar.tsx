@@ -14,11 +14,11 @@ export function TopBar({
 }) {
   const router = useRouter();
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border-default bg-surface-app px-gutter">
+    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border-default bg-surface-card px-gutter">
       <button
         aria-label="Back"
         onClick={onBack ?? (() => router.back())}
-        className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full text-text-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2"
+        className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full text-text-primary transition-colors duration-150 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2"
       >
         <ChevronLeft size={24} aria-hidden />
       </button>

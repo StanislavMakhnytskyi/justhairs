@@ -39,6 +39,41 @@ test.describe("booking UI", () => {
     }
   });
 
+  test("choosing a named specialist lands on a working date step, not an error page", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+
+    await page.goto("/book");
+    const firstService = page.getByRole("button", { name: /€\d/ }).first();
+    const specialistList = page.getByRole("heading", { name: "Book appointment" });
+    const dateStrip = page.getByRole("radiogroup", { name: "Choose a date" });
+    const anySpecialist = page.getByRole("button", { name: "Any specialist" });
+
+    await expect(async () => {
+      await firstService.click();
+      await expect(anySpecialist.or(dateStrip)).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+
+    // A single-stylist service skips this step; otherwise pick a named stylist
+    // (the row right after "Any specialist").
+    if (await anySpecialist.isVisible().catch(() => false)) {
+      await anySpecialist.locator("xpath=following::button[1]").click();
+    }
+
+    await expect(dateStrip).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Something went wrong" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "That didn’t go through" })).toHaveCount(0);
+    await expect(specialistList).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test("an unknown ?step= falls back to the first step that needs a choice", async ({ page }) => {
+    await page.goto("/book?step=banana");
+    await expect(page.getByRole("button", { name: /€\d/ }).first()).toBeVisible();
+  });
+
   test("a stylist card opens the services list filtered to that stylist", async ({ page }) => {
     await page.goto("/masters");
 

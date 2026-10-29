@@ -1,4 +1,3 @@
-import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -46,9 +45,11 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-full">
-        {/* Route changes are transitions, so this cross-fades pages in browsers
-            that support the View Transitions API and is a no-op elsewhere. */}
-        <ViewTransition>{children}</ViewTransition>
+        {/* No root <ViewTransition>: it snapshotted the whole page on every
+            router.push, and quick taps through the booking steps aborted the
+            in-flight transition ("InvalidStateError: Transition was aborted")
+            as an unhandled rejection. Pages animate themselves instead. */}
+        {children}
         <Analytics />
       </body>
     </html>

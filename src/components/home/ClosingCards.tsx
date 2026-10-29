@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Reveal } from "@/components/ui/Reveal";
 import { Button } from "@/components/ui/Button";
 import { FacebookIcon, InstagramIcon } from "@/components/ui/SocialIcons";
 import { LEGAL_CONTACT, SALON } from "@/lib/salon";
@@ -9,7 +10,7 @@ export function ReplyCard() {
   return (
     <section
       aria-labelledby="reply-title"
-      className="overflow-hidden bg-brand px-gutter pt-16 text-white lg:px-10 lg:pt-28"
+      className="overflow-hidden bg-brand px-gutter pt-16 text-white lg:mx-4 lg:mt-4 lg:rounded-tile lg:px-10 lg:pt-24"
     >
       <div className="mx-auto grid max-w-6xl items-end gap-10 lg:grid-cols-12 lg:gap-8">
         <p className="max-w-[28ch] text-heading lg:col-span-4 lg:pb-24">
@@ -17,7 +18,8 @@ export function ReplyCard() {
           chair is held.
         </p>
 
-        <div className="tilt-1 -mb-[3.75rem] bg-surface-card px-8 pb-24 pt-10 text-center text-text-primary lg:tilt-2 lg:col-span-6 lg:col-start-7 lg:px-12 lg:pt-14">
+        <Reveal className="-mb-[3.75rem] lg:col-span-6 lg:col-start-7">
+        <div className="tilt-1 bg-surface-card px-8 pb-24 pt-10 text-center text-text-primary lg:tilt-2 lg:px-12 lg:pt-14">
           <h2 id="reply-title" className="text-display">
             Book your visit
           </h2>
@@ -28,6 +30,7 @@ export function ReplyCard() {
             Book appointment
           </Button>
         </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -36,7 +39,7 @@ export function ReplyCard() {
 /** The back of the card: sign-off on one side, the address block on the other. */
 export function BackOfCard() {
   return (
-    <footer className="bg-[var(--neutral-900)] px-gutter pt-14 lg:px-10 lg:pt-20">
+    <footer className="overflow-hidden bg-[var(--neutral-900)] px-gutter pt-14 lg:m-4 lg:rounded-tile lg:px-10 lg:pt-20">
       <div className="scallop-top mx-auto max-w-6xl bg-surface-card px-7 pb-8 pt-20 text-text-primary lg:px-16">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
