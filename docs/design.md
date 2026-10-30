@@ -11,7 +11,7 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
 | **Band** | `.book-band` | Brand-purple page with a faint two-corner gradient mesh. Home bands are `bg-brand` tiles. |
 | **Paper** | `bg-surface-card` | The white (dark-theme: card) sheet everything sits on. |
 | **Cut** | `.cut` | Dotted perforation with a half-disc bitten from each edge. Discs are band-coloured, so a cut works anywhere in the card (and rides with the sticky stub). |
-| **Hero ticket** | `.ticket-hero` | Masked ticket on the video; side punches on mobile, perforation + top/bottom punches from `lg`. |
+| **Hero ticket** | `.ticket-hero` | Desktop only (`lg`): masked paper ticket on the video, perforation + top/bottom punches. On a phone there is no ticket over the video — see *Phone hero* below. |
 | **Scallop** | `.scallop-y`, `.scallop-top` | Scalloped edges: the price sheet, the back-of-card footer. |
 | **Torn slip** | `ReviewSlips` | `clip-path` zigzag; shadow lives on a *parent* (`drop-shadow`) because clip-path clips its own shadow. |
 | **Tile** | `rounded-tile` (28px) | Rounded bento panel, desktop (`lg`) only; mobile sections stay full-bleed bands. |
@@ -22,6 +22,7 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
 ## Layout
 
 - **Mobile (<1024px)**: single column, full-bleed bands, no floating nav. Booking = card on the band, 12px margin.
+  - **Phone hero**: one tall card on the brand band. The footage fills all of it; the headline, sentence and button sit *on* the footage over a neutral scrim (white text ≥ 4.5:1 across the whole loop — re-measure if the clip or scrim changes), the rating chip top-left opposite the pause button. The only paper is the tear-off stub at the foot (address + today's hours) with a scalloped top edge (`scallop-top`, `--r: 9px`) that bites into the footage. Do not stack a paper block under the video or draw a half perforation across it — that read as two blocks with a seam.
 - **Desktop (≥1024px)**:
   - `HomeNav` — floating frosted pill (`fixed top-4`), condenses to a solid-ish pill after the hero, scroll-spy highlights the section. `variant="book"` swaps the section links for Home/Services/Team.
   - Home = inset rounded hero (`lg:m-4 rounded-tile`), then rounded tiles 16px apart on a `surface-sunken` page: services (purple tile + photo + scalloped sheet), team (bento: 2×2 feature + singles + 2-wide CTA), reviews (purple tile, loose slips at different heights), visit (map tile + Hours / Find us / Book tiles), reply card, back-of-card footer.

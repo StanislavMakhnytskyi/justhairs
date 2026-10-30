@@ -12,12 +12,14 @@ const chip =
 
 /** The first screen is an appointment card.
  *
- *  Phone: one vertical ticket on the brand band — the salon footage is its
- *  photo panel, a perforation, then the paper with the headline and the action.
- *  Nothing is laid over the video, so neither fights the other.
+ *  Phone: one tall card on the brand band. The footage fills all of it; the
+ *  headline, sentence and action sit on the footage (over a neutral scrim), so
+ *  title and video are one picture rather than two stacked blocks. The only
+ *  paper is the tear-off stub at the foot — address and hours — whose scalloped
+ *  top edge bites into the footage, the same edge as the services sheet.
  *
- *  Desktop (lg): the footage fills an inset rounded panel and a compact ticket
- *  sits on its lower edge — main part left, tear-off stub with the address. */
+ *  Desktop (lg): the footage fills an inset rounded panel and a compact paper
+ *  ticket sits on its lower edge — main part left, stub with the address. */
 export function Hero({
   overall,
   openToday,
@@ -28,9 +30,9 @@ export function Hero({
 }) {
   return (
     <section className="relative isolate bg-brand px-3 pb-6 pt-3 lg:m-4 lg:flex lg:min-h-[calc(100svh-2rem)] lg:items-end lg:overflow-hidden lg:rounded-tile lg:px-10 lg:pb-12 lg:pt-24">
-      <div className="overflow-hidden rounded-[1.25rem] bg-surface-card max-lg:motion-safe:animate-print lg:contents">
-        {/* Footage: the card's photo panel on a phone, the whole backdrop on desktop. */}
-        <div className="relative isolate aspect-[4/5] max-h-[62svh] w-full overflow-hidden bg-[var(--neutral-900)] lg:absolute lg:inset-0 lg:aspect-auto lg:max-h-none">
+      <div className="relative isolate flex min-h-[min(46rem,calc(100svh-3rem))] flex-col overflow-hidden rounded-[1.25rem] bg-[var(--neutral-900)] max-lg:motion-safe:animate-print lg:contents">
+        {/* Footage: fills the phone card, and the whole backdrop on desktop. */}
+        <div className="absolute inset-0 isolate overflow-hidden bg-[var(--neutral-900)]">
           <SmoothImage
             src={HERO_POSTER}
             alt=""
@@ -42,36 +44,33 @@ export function Hero({
             className="-z-10 object-cover"
           />
           {HERO_VIDEO && <HeroVideo mp4={HERO_VIDEO.mp4} webm={HERO_VIDEO.webm} />}
-          {/* A touch of shade at the foot of the footage for the chip (phone); on
-              desktop the dark pools only where the ticket sits. */}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[var(--neutral-900)]/45 via-transparent to-transparent lg:bg-gradient-to-tr lg:from-[var(--neutral-900)]/65 lg:via-transparent" />
+          {/* Neutral scrim. Phone: deepens toward the foot so the white headline
+              holds; the top of the footage stays clear. Desktop: the dark pools
+              only where the ticket sits. */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[var(--neutral-900)]/92 via-[var(--neutral-900)]/60 via-50% to-transparent lg:bg-gradient-to-tr lg:from-[var(--neutral-900)]/65 lg:via-transparent" />
 
-          {/* Phone: the two facts a visitor wants first, riding on the footage. */}
-          <div className={`absolute bottom-3 left-3 flex flex-wrap gap-2 lg:hidden ${rise}`} style={step(2)}>
-            {overall && (
-              <p className={chip}>
-                <span className="text-rating">★</span> {overall.rating.toFixed(1)}
-                <span className="font-normal opacity-80"> · {overall.review_count} reviews</span>
-              </p>
-            )}
-            <p className={chip}>{openToday}</p>
-          </div>
+          {/* Phone: the rating, top-left, opposite the pause button. */}
+          {overall && (
+            <p className={`absolute left-3 top-3 lg:hidden ${chip} ${rise}`} style={step(2)}>
+              <span className="text-rating">★</span> {overall.rating.toFixed(1)}
+              <span className="font-normal opacity-80"> · {overall.review_count} reviews</span>
+            </p>
+          )}
         </div>
 
-        {/* Perforation between photo and paper (phone only). Its notches take the
-            band colour, so it reads as bitten out of the card. */}
-        <div className="cut lg:hidden" aria-hidden />
-
-        <div className="relative mx-auto flex w-full max-w-6xl items-end justify-between gap-6 lg:z-0">
+        <div className="relative mx-auto mt-auto flex w-full max-w-6xl items-end justify-between gap-6 lg:z-0 lg:mt-0">
           <div
-            className="ticket-hero w-full bg-surface-card text-text-primary lg:grid lg:max-w-[44rem] lg:grid-cols-[1fr_13rem] lg:motion-safe:animate-print"
+            className="ticket-hero w-full text-white lg:grid lg:max-w-[44rem] lg:grid-cols-[1fr_13rem] lg:bg-surface-card lg:text-text-primary lg:motion-safe:animate-print"
             style={step(1)}
           >
-            <div className="px-6 pb-6 pt-7 lg:px-10 lg:py-10">
+            <div className="px-5 pb-6 pt-24 lg:px-10 lg:py-10">
               <h1 className={`text-display ${rise}`} style={step(3)}>
                 Book your look in under a minute
               </h1>
-              <p className={`mt-3 max-w-[36ch] text-body text-text-secondary ${rise}`} style={step(4)}>
+              <p
+                className={`mt-3 max-w-[36ch] text-body text-white/92 lg:text-text-secondary ${rise}`}
+                style={step(4)}
+              >
                 Haircuts, colour and styling for men and women.
               </p>
               <Button
@@ -81,10 +80,6 @@ export function Hero({
               >
                 Book appointment
               </Button>
-              {/* Phone: the stub's address, as a line under the action. */}
-              <p className={`mt-5 text-center text-label text-text-secondary lg:hidden ${rise}`} style={step(6)}>
-                {SALON.addressLines[0]}, {SALON.addressLines[1]} · Tue–Sat 9–18
-              </p>
             </div>
 
             <div
@@ -108,6 +103,18 @@ export function Hero({
             )}
             <p className={chip.replace("px-3.5 py-1.5", "px-4 py-2")}>{openToday}</p>
           </div>
+        </div>
+
+        {/* Phone: the tear-off stub. Paper, scalloped along its top edge so the
+            footage shows through the bites. */}
+        <div
+          className="scallop-top relative bg-surface-card px-5 pb-4 pt-6 text-text-primary lg:hidden"
+          style={{ "--r": "9px" } as React.CSSProperties}
+        >
+          <p className="text-subhead">
+            {SALON.addressLines[0]}, {SALON.addressLines[1]}
+          </p>
+          <p className="mt-0.5 text-label text-text-secondary">{openToday}</p>
         </div>
       </div>
     </section>
