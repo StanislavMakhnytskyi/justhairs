@@ -101,16 +101,13 @@ cp .env.example .env.local   # then fill in the values below
 | `NEXT_PUBLIC_SITE_URL` | yes | client + server | Stripe return URL (`http://localhost:3000` locally) |
 | `TEST_PROD_URL`, `TEST_PREVIEW_URL` | tests only | Playwright | Deployment under test |
 
-Apply the schema in the Supabase SQL editor, in order:
+Set up the database: enable the `pg_cron` extension (Supabase → Database → Extensions),
+then paste [`supabase/setup.sql`](supabase/setup.sql) into the SQL editor and run it. It is
+the whole schema, booking RPCs, cron jobs and the demo salon in one file.
 
-1. `supabase/migrations/0001_init.sql`
-2. `supabase/migrations/0002_reviews_and_cron.sql` (needs the `pg_cron` extension enabled)
-3. `supabase/migrations/0003_guest_booking_no_auth.sql`
-4. `supabase/migrations/0004_day_availability.sql`
-5. `supabase/seed.sql`
-
-Or, with the Supabase CLI linked: `supabase db push`, then
-`psql "$DATABASE_URL" -f supabase/seed.sql`.
+Already have a project? `supabase/setup.sql` is for a fresh database only — apply just the newer
+files in `supabase/migrations/` (or `supabase db push`). `setup.sql` is generated from the
+migrations + `seed.sql` by `npm run db:setup`, and CI checks it is up to date.
 
 ```bash
 npm run dev
@@ -122,6 +119,7 @@ npm run dev
 | --- | --- |
 | `npm run dev` / `build` / `start` | Next.js dev server / production build / serve build |
 | `npm run lint` | ESLint |
+| `npm run db:setup` | Regenerate `supabase/setup.sql` from the migrations + seed (`db:setup:check` verifies it) |
 | `npm run test:smoke` | Route + RPC checks against `TEST_PROD_URL` |
 | `npm run test:e2e` | Full booking flows, incl. Stripe test payment |
 | `npm run test:smoke:preview`, `test:e2e:preview` | Same, against `TEST_PREVIEW_URL` |
@@ -189,9 +187,10 @@ src/
     queries.ts, appointments.ts  Catalog reads; appointment read + Stripe reconcile
     stripe.ts                    Stripe client (null without a key)
 supabase/
-  migrations/                    0001 schema + RPCs · 0002 reviews/cron · 0003 guest bookings · 0004 day availability
+  migrations/                    Ordered history, 0001–0006 (upgrade path for an existing project)
+  setup.sql                      Generated one-shot bundle: all migrations + seed (fresh install)
   seed.sql                       Demo salon, services, staff, hours
-scripts/                         seed-demo, sync-catalog, gen-blur
+scripts/                         seed-demo, sync-catalog, gen-blur, build-setup-sql
 tests/                           smoke/, e2e/, support/
 CODE_REVIEW.md                   Self-review: 23 tracked findings
 ```

@@ -2,6 +2,7 @@
 paths:
   - "supabase/migrations/**"
   - "supabase/seed.sql"
+  - "supabase/setup.sql"
 ---
 
 # Migration rules
@@ -13,3 +14,4 @@ paths:
 - Make it re-runnable (`create or replace`, `drop … if exists`, `on conflict`), and note any pre-check the user should run first (e.g. overlapping rows before adding an exclusion constraint).
 - Use a distinct SQLSTATE (like `JH409`) for expected business errors so the app switches on `error.code`, not message text.
 - Have `migration-reviewer` look at it before it is handed over.
+- `supabase/setup.sql` is the generated one-shot bundle (all migrations + seed) that the README sends fresh installs to. After adding a migration or changing `seed.sql`, run `npm run db:setup` and commit the result — CI fails (`db:setup:check`) if you forget. Never hand-edit it.

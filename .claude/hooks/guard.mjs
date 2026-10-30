@@ -18,6 +18,9 @@ if (/^supabase\/migrations\/000[1-6]_/.test(rel)) {
     `${rel} is already applied to the live database. Add a new numbered migration instead (see .claude/rules/migrations.md).`,
   );
 }
+if (rel === "supabase/setup.sql") {
+  block("supabase/setup.sql is generated from the migrations + seed — edit those, then run `npm run db:setup`.");
+}
 if (/(^|\/)\.env(\..+)?$/.test(rel) && !rel.endsWith(".env.example")) {
   block(`${rel} holds secrets. Edit .env.example and ask the user to update their local env.`);
 }

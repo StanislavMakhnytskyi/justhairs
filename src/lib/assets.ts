@@ -7,13 +7,20 @@ const SUPABASE_URL =
 
 export const CDN = `${SUPABASE_URL}/storage/v1/object/public/assets`;
 
-export const HERO_IMAGE = `${CDN}/hero.webp`;
+// Hero media is versioned. The bucket serves it with a one-year cache, so a new
+// clip gets a new number instead of overwriting the old files. Build all three
+// with scripts/prepare-hero.mjs, publish with scripts/upload-hero-video.mjs.
+const HERO_VERSION = 2;
 
-// Background loop for the home hero. Upload hero.mp4 and hero.webm to the
-// bucket, then set NEXT_PUBLIC_HERO_VIDEO=1 — until then the hero is image-only.
+/** Frame 0 of the hero video. It is the hero's still while the video loads and
+ *  the video's poster, so nothing visibly changes when playback starts. */
+export const HERO_POSTER = `${CDN}/hero-${HERO_VERSION}-poster.webp`;
+
+// Background loop for the home hero. Set NEXT_PUBLIC_HERO_VIDEO=1 to play it —
+// without the flag the hero is just the poster frame.
 export const HERO_VIDEO =
   process.env.NEXT_PUBLIC_HERO_VIDEO === "1"
-    ? { mp4: `${CDN}/hero.mp4`, webm: `${CDN}/hero.webm` }
+    ? { mp4: `${CDN}/hero-${HERO_VERSION}.mp4`, webm: `${CDN}/hero-${HERO_VERSION}.webm` }
     : null;
 
 /**

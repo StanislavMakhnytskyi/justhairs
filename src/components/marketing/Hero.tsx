@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { SmoothImage } from "@/components/ui/SmoothImage";
-import { HERO_IMAGE, HERO_VIDEO, blurFor } from "@/lib/assets";
+import { HERO_POSTER, HERO_VIDEO, blurFor } from "@/lib/assets";
 import { SALON } from "@/lib/salon";
 import { HeroVideo } from "./HeroVideo";
 
@@ -32,12 +32,12 @@ export function Hero({
         {/* Footage: the card's photo panel on a phone, the whole backdrop on desktop. */}
         <div className="relative isolate aspect-[4/5] max-h-[62svh] w-full overflow-hidden bg-[var(--neutral-900)] lg:absolute lg:inset-0 lg:aspect-auto lg:max-h-none">
           <SmoothImage
-            src={HERO_IMAGE}
+            src={HERO_POSTER}
             alt=""
             fill
             preload
             fetchPriority="high"
-            blurDataURL={blurFor(HERO_IMAGE)}
+            blurDataURL={blurFor(HERO_POSTER)}
             sizes="(min-width: 1024px) 100vw, (max-width: 480px) 100vw, 480px"
             className="-z-10 object-cover"
           />
