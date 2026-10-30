@@ -29,6 +29,17 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
   - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. Other booking pages keep one centred card (40rem).
 - Anchors need `scroll-mt-24` (the nav floats).
 
+## Photography
+
+Every service and every team member has **a real photograph of a master at work**, from free stock (Pexels, credited in `public/ds/CREDITS.md`) — never generated or illustrated imagery. The set reads as one because of how it is chosen and finished, not because the originals match:
+
+- **Subject**: a close or medium shot of a barber or stylist actually performing *that* service — shears on the ends for a women's cut, a hot towel and razor for shaving, a brush on foil for highlights, a round brush and dryer for a blow-dry, curls pinned for event styling, a treatment cap for treatment. Hands and tools are the subject; faces are optional. One service, one photo — never share a picture between services, and no mask-era or third-party-branded shots.
+- **Team**: a portrait of a barber or stylist in their own shop, head and shoulders, looking at or near the camera; barbers for the barbers, stylists for the stylists.
+- **Finish**: `scripts/prepare-photos.mjs` crops each to 4:3 (services; shown at 16:9, 4:5 and 1:1) or 4:5 (team) around a chosen focus and applies the *same* grade to all — slightly desaturated, a touch more contrast, shadows pulled toward the site's navy. Do not hand-edit a photo; change its entry in `scripts/photos.json` (Pexels id, `focus`, `zoom`) and re-run.
+- **Output**: `public/images/{services,staff}/<slug>.<hash>.webp` plus `src/lib/photos.generated.ts` (blur placeholders) — commit both. The hash in the filename means a changed photo is a new URL, so no cache can serve the old one.
+- The catalog layer serves these in place of the database's `photo_url`; slugs without a photo keep their stored URL.
+- To add a service or stylist: pick a Pexels photo that meets the subject rule, add it to `photos.json`, run the script, check it at 16:9 / 4:5 / 1:1 and credit it in `CREDITS.md`.
+
 ## Type scale
 
 Named steps only — `text-hero 56 / display 32 / title 23 / heading 18 / subhead 16 / body 15 / label 13 / caption 12`. **No `text-[Npx]`** in `src/components` or `src/app` (a hook enforces it; `Logo`'s wordmark is the single exception). Section titles use `text-display lg:text-hero`. Import `tv` from `src/lib/tv.ts`, not `tailwind-variants` (tailwind-merge otherwise eats custom `text-*` steps); `cn()` is plain clsx.

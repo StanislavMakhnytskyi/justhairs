@@ -1,24 +1,48 @@
 # Image credits
 
-All photos are from [Unsplash](https://unsplash.com) under the
-[Unsplash License](https://unsplash.com/license) (free, commercial use allowed,
-no attribution required). They are resized, cropped and re-encoded to WebP, then
-served from the Supabase Storage `assets` bucket (public, CDN) — not committed to
-this repo. Re-upload with `scripts/` if the bucket is recreated.
+All service and team photographs are free stock from [Pexels](https://www.pexels.com)
+under the [Pexels License](https://www.pexels.com/license/) (free for commercial use, no
+attribution required — credited here anyway). Each is cropped to a common shape and given
+one mild colour grade (`scripts/prepare-photos.mjs`, ids in `scripts/photos.json`), then
+committed in `public/images/{services,staff}/` with a content hash in the filename. The
+catalog layer (`src/lib/queries.ts`) serves them in place of the `photo_url` stored in the
+database, so the old Unsplash files in the Supabase bucket (`assets/services/*.webp`,
+`assets/staff/*.webp`) are no longer used.
 
-## Services (`assets/services/*.webp`)
+Pexels asks that identifiable people are not shown in a bad light or as endorsing a
+product; these are ordinary salon and barbershop scenes. Photographer names are listed
+where known; the rest are on each photo's Pexels page.
 
-| Slug | Unsplash photo ID |
-| --- | --- |
-| `mens-haircut`, `mens-haircut-beard` | `photo-1599351431202-1e0f0137899a` |
-| `mens-beard`, `mens-shaving` | `photo-1503951914875-452162b0f3f1` |
-| `mens-styling` | `photo-1552642986-ccb41e7059e7` |
-| `womens-haircut` | `photo-1519699047748-de8e457a634e` |
-| `womens-coloring`, `womens-highlights` | `photo-1470259078422-826894b933aa` |
-| `womens-blow-dry` | `photo-1562322140-8baeececf3df` |
-| `womens-styling` | `photo-1580618672591-eb180b1a973f` |
-| `womens-treatment` | `photo-1595476108010-b4d1f102b1b1` |
-| `hero` | `photo-1521590832167-7bcbfaa6381f` |
+## Services (`public/images/services/`)
+
+| Slug | Pexels photo | Photographer |
+| --- | --- | --- |
+| `mens-haircut` | [17784004](https://www.pexels.com/photo/17784004/) | — |
+| `mens-haircut-beard` | [4625615](https://www.pexels.com/photo/4625615/) | — |
+| `mens-beard` | [3998421](https://www.pexels.com/photo/3998421/) | — |
+| `mens-shaving` | [6007400](https://www.pexels.com/photo/6007400/) | alexandre saraiva carniato |
+| `mens-styling` | [4952618](https://www.pexels.com/photo/4952618/) | — |
+| `womens-haircut` | [8467965](https://www.pexels.com/photo/8467965/) | — |
+| `womens-coloring` | [2799605](https://www.pexels.com/photo/2799605/) | — |
+| `womens-highlights` | [8468126](https://www.pexels.com/photo/8468126/) | — |
+| `womens-blow-dry` | [10028673](https://www.pexels.com/photo/10028673/) | — |
+| `womens-styling` | [3065171](https://www.pexels.com/photo/3065171/) | Engin Akyurt |
+| `womens-treatment` | [7755502](https://www.pexels.com/photo/7755502/) | — |
+
+## Team (`public/images/staff/`)
+
+These are stock portraits of barbers and stylists standing in for the demo team; the names
+on the site are fictional.
+
+| Slug | Pexels photo | Photographer |
+| --- | --- | --- |
+| `ben-carter` | [18483774](https://www.pexels.com/photo/18483774/) | — |
+| `devon-cole` | [7697489](https://www.pexels.com/photo/7697489/) | — |
+| `marco-ferreira` | [3423308](https://www.pexels.com/photo/3423308/) | — |
+| `amara-lee` | [8834019](https://www.pexels.com/photo/8834019/) | — |
+| `priya-shah` | [3992860](https://www.pexels.com/photo/3992860/) | cottonbro studio |
+| `nadia-hassan` | [33867529](https://www.pexels.com/photo/33867529/) | Daniel & Hannah Snipes |
+| `yuki-tanaka` | [9709014](https://www.pexels.com/photo/9709014/) | Kamil Rybarski |
 
 ## Hero video (`assets/hero-2.mp4`, `assets/hero-2.webm`, `assets/hero-2-poster.webp`)
 
@@ -37,4 +61,4 @@ it the hero is the poster frame.
 The previous clip ("Hairdresser's tools" from
 [Coverr](https://coverr.co/videos/hairdressers-tools-px2xmoqn61), royalty-free for
 commercial use, no attribution required) is `assets/hero.mp4` / `hero.webm`, and
-`assets/hero.webp` is its old still; neither is referenced any more.
+`assets/hero.webp` (Unsplash `photo-1521590832167-7bcbfaa6381f`) is its old still; neither is referenced any more.

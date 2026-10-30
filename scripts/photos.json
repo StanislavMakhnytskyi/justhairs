@@ -1,0 +1,25 @@
+{
+  "_comment": "Pexels photo ids (free commercial use, no attribution required — credited in public/ds/CREDITS.md). focus = [x, y] centre of the crop as a fraction of the original; zoom < 1 = tighter crop; by = photographer when known.",
+  "services": {
+    "mens-haircut": {"id": 17784004, "focus": [0.5, 0.5]},
+    "mens-haircut-beard": {"id": 4625615, "focus": [0.5, 0.5]},
+    "mens-beard": {"id": 3998421, "focus": [0.5, 0.5]},
+    "mens-shaving": {"id": 6007400, "focus": [0.5, 0.5], "by": "alexandre saraiva carniato"},
+    "mens-styling": {"id": 4952618, "focus": [0.5, 0.5]},
+    "womens-haircut":     { "id": 8467965,  "focus": [0.5, 0.42], "zoom": 0.9 },
+    "womens-coloring": {"id": 2799605, "focus": [0.5, 0.5]},
+    "womens-highlights":  { "id": 8468126,  "focus": [0.43, 0.38], "zoom": 0.9 },
+    "womens-blow-dry": {"id": 10028673, "focus": [0.5, 0.5]},
+    "womens-styling": {"id": 3065171, "focus": [0.5, 0.5], "by": "Engin Akyurt"},
+    "womens-treatment": {"id": 7755502, "focus": [0.5, 0.5]}
+  },
+  "staff": {
+    "ben-carter": {"id": 18483774, "focus": [0.6, 0.26], "zoom": 0.5},
+    "devon-cole": {"id": 7697489, "focus": [0.5, 0.42], "zoom": 0.85},
+    "marco-ferreira": {"id": 3423308, "focus": [0.5, 0.45], "zoom": 0.95},
+    "amara-lee": {"id": 8834019, "focus": [0.5, 0.42], "zoom": 0.85},
+    "priya-shah": {"id": 3992860, "focus": [0.5, 0.47], "by": "cottonbro studio", "zoom": 0.52},
+    "nadia-hassan": {"id": 33867529, "focus": [0.5, 0.38], "by": "Daniel & Hannah Snipes", "zoom": 0.45},
+    "yuki-tanaka": {"id": 9709014, "focus": [0.56, 0.2], "by": "Kamil Rybarski", "zoom": 0.42}
+  }
+}
