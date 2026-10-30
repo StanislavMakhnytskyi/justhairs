@@ -51,3 +51,7 @@ next-env.d.ts
 
 # design-skill working files
 .taste-skill/
+
+# dev tooling output / personal Claude overrides
+/.shots/
+.claude/settings.local.json

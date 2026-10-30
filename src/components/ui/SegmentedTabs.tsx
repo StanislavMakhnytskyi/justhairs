@@ -78,7 +78,9 @@ export function StepTabs({
                 "relative z-10 mx-auto grid size-7 place-items-center rounded-full text-caption font-bold ring-4 ring-surface-card transition-colors duration-200 ease-[var(--ease-out)]",
                 done && "bg-brand text-text-on-brand",
                 active && "bg-[var(--neutral-900)] text-white",
-                !done && !active && "border-2 border-dashed border-border-strong text-text-tertiary",
+                !done &&
+                  !active &&
+                  "border-2 border-dashed border-border-strong bg-surface-card text-text-tertiary",
               )}
             >
               {done ? (
@@ -107,9 +109,11 @@ export function StepTabs({
             key={s}
             className={cn(
               "relative flex-1 text-center",
-              // dotted stretch back to the previous stub
+              // Dotted stretch back to the previous stub. It runs between the two
+              // badges' edges (radius 0.875rem + a 0.375rem gap each side), never
+              // through them, so it can't cross a number.
               i > 0 &&
-                "before:absolute before:right-1/2 before:top-3 before:w-full before:border-t-4 before:border-dotted",
+                "before:absolute before:left-[calc(-50%+1.25rem)] before:right-[calc(50%+1.25rem)] before:top-3 before:border-t-4 before:border-dotted",
               i > 0 && (done || active ? "before:border-brand" : "before:border-border-strong"),
             )}
           >

@@ -1,0 +1,60 @@
+# justhairs design system (as built)
+
+The site is a **printed appointment card**: paper on a brand-coloured band, cut with perforations, stamped when it's done. Home and booking share the one vocabulary. This file is the contract the design agents (`ui-designer`, `design-reviewer`) build and check against — keep it in step with the code.
+
+Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `src/app/globals.css` (`@theme` type scale, motion, and the shape utilities below). Never hard-code colours or pixel sizes.
+
+## Vocabulary
+
+| Piece | Where | What it is |
+| --- | --- | --- |
+| **Band** | `.book-band` | Brand-purple page with a faint two-corner gradient mesh. Home bands are `bg-brand` tiles. |
+| **Paper** | `bg-surface-card` | The white (dark-theme: card) sheet everything sits on. |
+| **Cut** | `.cut` | Dotted perforation with a half-disc bitten from each edge. Discs are band-coloured, so a cut works anywhere in the card (and rides with the sticky stub). |
+| **Hero ticket** | `.ticket-hero` | Masked ticket on the video; side punches on mobile, perforation + top/bottom punches from `lg`. |
+| **Scallop** | `.scallop-y`, `.scallop-top` | Scalloped edges: the price sheet, the back-of-card footer. |
+| **Torn slip** | `ReviewSlips` | `clip-path` zigzag; shadow lives on a *parent* (`drop-shadow`) because clip-path clips its own shadow. |
+| **Tile** | `rounded-tile` (28px) | Rounded bento panel, desktop (`lg`) only; mobile sections stay full-bleed bands. |
+| **Eyebrow** | `01 — Services` … `04 — Visit` | Numbered label above section titles; echoes the booking step numbers. |
+| **Stub** | `StickyBar` | Bottom of a booking card: perforation + detail (price) + the one action. |
+| **Stamp** | `animate-stamp` | Confirmation seal. |
+
+## Layout
+
+- **Mobile (<1024px)**: single column, full-bleed bands, no floating nav. Booking = card on the band, 12px margin.
+- **Desktop (≥1024px)**:
+  - `HomeNav` — floating frosted pill (`fixed top-4`), condenses to a solid-ish pill after the hero, scroll-spy highlights the section. `variant="book"` swaps the section links for Home/Services/Team.
+  - Home = inset rounded hero (`lg:m-4 rounded-tile`), then rounded tiles 16px apart on a `surface-sunken` page: services (purple tile + photo + scalloped sheet), team (bento: 2×2 feature + singles + 2-wide CTA), reviews (purple tile, loose slips at different heights), visit (map tile + Hours / Find us / Book tiles), reply card, back-of-card footer.
+  - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. Other booking pages keep one centred card (40rem).
+- Anchors need `scroll-mt-24` (the nav floats).
+
+## Type scale
+
+Named steps only — `text-hero 56 / display 32 / title 23 / heading 18 / subhead 16 / body 15 / label 13 / caption 12`. **No `text-[Npx]`** in `src/components` or `src/app` (a hook enforces it; `Logo`'s wordmark is the single exception). Section titles use `text-display lg:text-hero`. Import `tv` from `src/lib/tv.ts`, not `tailwind-variants` (tailwind-merge otherwise eats custom `text-*` steps); `cn()` is plain clsx.
+
+## Motion
+
+- Tokens in `@theme`: `animate-rise` (+ `.stagger` with `--i`), `animate-print` (ticket off the printer), `animate-stamp`, `animate-settle`, `animate-pill-in`, `animate-fade-in(-up)`, sheet/scrim.
+- `Reveal` (`components/ui/Reveal.tsx`) for scroll-in: content is visible by default and only hidden once the client knows it is below the fold.
+- **Rules**: every animation is `motion-safe:`; **no `animation-fill-mode: both/forwards` on entrances** (a frozen tab would pin the first frame at opacity 0 — `backwards` only, for stagger delays); the single `prefers-reduced-motion` block at the end of `globals.css` must keep covering new keyframes; nothing may be invisible without JS.
+- Page transitions: **no root `<ViewTransition>`** — quick taps aborted it ("Transition was aborted") and surfaced as an unhandled rejection. Pages animate themselves.
+
+## Colour, themes, surfaces
+
+Use semantic tokens: `surface-app / card / sunken`, `text-primary / secondary / tertiary`, `border-default / strong`, `brand*`. Dark theme flips via `[data-theme="dark"]`; paper stays `surface-card`. Photo tiles pin dark text (`--neutral-900`) so they read identically in both themes. Glass surfaces (`backdrop-blur` + translucent fill) must keep text ≥ 4.5:1 — add a dark tint under white text on video.
+
+## Interaction & a11y
+
+- Targets ≥ 44px (back button, slot cells). Visible focus ring everywhere (`focus-visible:outline-2 outline-brand`).
+- Booking semantics are load-bearing for tests: `radiogroup`/`radio` for dates and times (`Choose a date`, `Choose a time`), `Back`, `Back to <step>` buttons, `aria-current="step"`, `Any specialist`, `Confirm booking`.
+- Selectable rows are printed lines (dotted rule, tint when selected + brand check) — no boxed cards in lists.
+- Decorative bits (`.cut`, dotted leaders, perforation) are `aria-hidden`.
+
+## Checklist for a design review
+
+1. Same vocabulary on home *and* every booking step (band, paper, cut, stub, eyebrows).
+2. 390 / 768 / 1024 / 1440 / 1920, light + dark, reduced motion — nothing hidden, no overlap (check hero chips vs pause button, nav vs content).
+3. Type scale + tokens only; no raw px/hex.
+4. Motion present on load and on scroll, but only under `motion-safe`.
+5. Contrast on glass/photo surfaces; 44px targets; focus rings.
+6. Empty/edge states: no photo, one stylist, fully booked day, error boundary.

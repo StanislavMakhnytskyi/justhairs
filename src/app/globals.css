@@ -314,20 +314,9 @@ button:disabled {
   mask: radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) top / calc(var(--r) * 2.6) 100% repeat-x;
 }
 
-/* Hero ticket: a punch out of each side edge. On a phone it is one piece, so
-   the punches sit mid-height; from lg the stub is 13rem wide and the punches
-   sit top and bottom on the perforation line. */
-.ticket-hero {
-  --n: 12px;
-  -webkit-mask:
-    radial-gradient(circle var(--n) at 0 50%, #0000 97%, #000),
-    radial-gradient(circle var(--n) at 100% 50%, #0000 97%, #000);
-  -webkit-mask-composite: source-in;
-  mask:
-    radial-gradient(circle var(--n) at 0 50%, #0000 97%, #000),
-    radial-gradient(circle var(--n) at 100% 50%, #0000 97%, #000);
-  mask-composite: intersect;
-}
+/* Hero ticket (desktop): a punch out of the top and bottom edge, on the
+   perforation line that separates the stub (13rem) from the main part. On a
+   phone the hero is a vertical card with a `.cut` instead, so no mask there. */
 @media (min-width: 1024px) {
   .ticket-hero {
     --n: 16px;

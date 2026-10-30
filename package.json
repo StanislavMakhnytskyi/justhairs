@@ -11,7 +11,11 @@
     "test:smoke:preview": "cross-env PW_TARGET=preview playwright test tests/smoke",
     "test:e2e": "playwright test tests/e2e",
     "test:e2e:preview": "cross-env PW_TARGET=preview playwright test tests/e2e",
-    "playwright:install": "playwright install chromium"
+    "playwright:install": "playwright install chromium",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
+    "shots": "node scripts/shots.mjs",
+    "check:flow": "node scripts/flow-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
