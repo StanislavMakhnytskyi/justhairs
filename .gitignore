@@ -57,3 +57,5 @@ next-env.d.ts
 .claude/settings.local.json
 
 /.hero-build/
+
+/.photos-cache/

@@ -29,9 +29,16 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
   - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. Other booking pages keep one centred card (40rem).
 - Anchors need `scroll-mt-24` (the nav floats).
 
-## Service pictures
+## Photography
 
-One picture per service, **a flat-lay of the tools that service uses**, on the hero's navy dotted mat: same light (top-left, shadow bottom-right), same palette (steel, black, wood, brass, brand purple as the single accent), same 4:3 canvas. They are drawn in code, not photographed, so they stay consistent and need no licence: `scripts/draw-service-images.mjs` holds the tool library and one composition per slug; run it to regenerate `public/images/services/*.webp` and `src/lib/service-images.generated.ts` (commit both). To add a service: add a composition keyed by its slug. Keep the group inside the centre — the site crops to 16:9 (service page), 4:5 (home price-sheet frame) and 1:1 (lists); the script auto-fits each group into that safe area. Use the same tools only for the services that really use them (shears for cuts, razor + brush + bowl for shaving, foils for highlights…), and never put a third-party brand or text on a tool. The catalog layer serves these in place of the database's `photo_url`.
+Every service and every team member has **a real photograph of a master at work**, from free stock (Pexels, credited in `public/ds/CREDITS.md`) — never generated or illustrated imagery. The set reads as one because of how it is chosen and finished, not because the originals match:
+
+- **Subject**: a close or medium shot of a barber or stylist actually performing *that* service — shears on the ends for a women's cut, a hot towel and razor for shaving, a brush on foil for highlights, a round brush and dryer for a blow-dry, curls pinned for event styling, a treatment cap for treatment. Hands and tools are the subject; faces are optional. One service, one photo — never share a picture between services, and no mask-era or third-party-branded shots.
+- **Team**: a portrait of a barber or stylist in their own shop, head and shoulders, looking at or near the camera; barbers for the barbers, stylists for the stylists.
+- **Finish**: `scripts/prepare-photos.mjs` crops each to 4:3 (services; shown at 16:9, 4:5 and 1:1) or 4:5 (team) around a chosen focus and applies the *same* grade to all — slightly desaturated, a touch more contrast, shadows pulled toward the site's navy. Do not hand-edit a photo; change its entry in `scripts/photos.json` (Pexels id, `focus`, `zoom`) and re-run.
+- **Output**: `public/images/{services,staff}/<slug>.<hash>.webp` plus `src/lib/photos.generated.ts` (blur placeholders) — commit both. The hash in the filename means a changed photo is a new URL, so no cache can serve the old one.
+- The catalog layer serves these in place of the database's `photo_url`; slugs without a photo keep their stored URL.
+- To add a service or stylist: pick a Pexels photo that meets the subject rule, add it to `photos.json`, run the script, check it at 16:9 / 4:5 / 1:1 and credit it in `CREDITS.md`.
 
 ## Type scale
 
