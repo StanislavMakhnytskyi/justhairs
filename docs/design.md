@@ -29,6 +29,10 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
   - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. Other booking pages keep one centred card (40rem).
 - Anchors need `scroll-mt-24` (the nav floats).
 
+## Service pictures
+
+One picture per service, **a flat-lay of the tools that service uses**, on the hero's navy dotted mat: same light (top-left, shadow bottom-right), same palette (steel, black, wood, brass, brand purple as the single accent), same 4:3 canvas. They are drawn in code, not photographed, so they stay consistent and need no licence: `scripts/draw-service-images.mjs` holds the tool library and one composition per slug; run it to regenerate `public/images/services/*.webp` and `src/lib/service-images.generated.ts` (commit both). To add a service: add a composition keyed by its slug. Keep the group inside the centre — the site crops to 16:9 (service page), 4:5 (home price-sheet frame) and 1:1 (lists); the script auto-fits each group into that safe area. Use the same tools only for the services that really use them (shears for cuts, razor + brush + bowl for shaving, foils for highlights…), and never put a third-party brand or text on a tool. The catalog layer serves these in place of the database's `photo_url`.
+
 ## Type scale
 
 Named steps only — `text-hero 56 / display 32 / title 23 / heading 18 / subhead 16 / body 15 / label 13 / caption 12`. **No `text-[Npx]`** in `src/components` or `src/app` (a hook enforces it; `Logo`'s wordmark is the single exception). Section titles use `text-display lg:text-hero`. Import `tv` from `src/lib/tv.ts`, not `tailwind-variants` (tailwind-merge otherwise eats custom `text-*` steps); `cn()` is plain clsx.

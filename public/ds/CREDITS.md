@@ -1,24 +1,18 @@
 # Image credits
 
-All photos are from [Unsplash](https://unsplash.com) under the
-[Unsplash License](https://unsplash.com/license) (free, commercial use allowed,
-no attribution required). They are resized, cropped and re-encoded to WebP, then
-served from the Supabase Storage `assets` bucket (public, CDN) — not committed to
-this repo. Re-upload with `scripts/` if the bucket is recreated.
+Two kinds of picture on the site:
 
-## Services (`assets/services/*.webp`)
-
-| Slug | Unsplash photo ID |
-| --- | --- |
-| `mens-haircut`, `mens-haircut-beard` | `photo-1599351431202-1e0f0137899a` |
-| `mens-beard`, `mens-shaving` | `photo-1503951914875-452162b0f3f1` |
-| `mens-styling` | `photo-1552642986-ccb41e7059e7` |
-| `womens-haircut` | `photo-1519699047748-de8e457a634e` |
-| `womens-coloring`, `womens-highlights` | `photo-1470259078422-826894b933aa` |
-| `womens-blow-dry` | `photo-1562322140-8baeececf3df` |
-| `womens-styling` | `photo-1580618672591-eb180b1a973f` |
-| `womens-treatment` | `photo-1595476108010-b4d1f102b1b1` |
-| `hero` | `photo-1521590832167-7bcbfaa6381f` |
+- **Service pictures are original artwork.** Each service is a flat-lay of the tools it
+  uses on the same navy dotted mat as the hero footage, drawn in code
+  (`scripts/draw-service-images.mjs`) and committed as `public/images/services/<slug>.webp`
+  with their blur placeholders in `src/lib/service-images.generated.ts`. Nothing to
+  credit or license. The catalog layer (`src/lib/queries.ts`) serves them in place of the
+  `photo_url` stored in the database, so the old bucket files
+  (`assets/services/*.webp`, Unsplash photos) are no longer used.
+- **Team portraits are photos** from [Unsplash](https://unsplash.com) under the
+  [Unsplash License](https://unsplash.com/license) (free, commercial use allowed, no
+  attribution required), resized and re-encoded to WebP, served from the Supabase Storage
+  `assets` bucket (public, CDN) — not committed to this repo.
 
 ## Hero video (`assets/hero-2.mp4`, `assets/hero-2.webm`, `assets/hero-2-poster.webp`)
 
@@ -37,4 +31,4 @@ it the hero is the poster frame.
 The previous clip ("Hairdresser's tools" from
 [Coverr](https://coverr.co/videos/hairdressers-tools-px2xmoqn61), royalty-free for
 commercial use, no attribution required) is `assets/hero.mp4` / `hero.webm`, and
-`assets/hero.webp` is its old still; neither is referenced any more.
+`assets/hero.webp` (Unsplash `photo-1521590832167-7bcbfaa6381f`) is its old still; neither is referenced any more.

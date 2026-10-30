@@ -1,4 +1,5 @@
 import { createPublicClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { SERVICE_IMAGES } from "@/lib/service-images.generated";
 import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
 
 export type ServiceWithCategory = Service & { category: ServiceCategory };
@@ -9,6 +10,14 @@ export type WorkingHour = {
   start_time: string;
   end_time: string;
 };
+
+/** The picture drawn for a service (scripts/draw-service-images.mjs, committed in
+ *  public/images/services) replaces whatever photo_url the database holds, so
+ *  every service has its own on-style image without touching the live data. */
+function withImage<T extends { slug: string; photo_url: string | null }>(s: T): T {
+  const img = SERVICE_IMAGES[s.slug];
+  return img ? { ...s, photo_url: img.src } : s;
+}
 
 const EMPTY_CATALOG = {
   categories: [] as ServiceCategory[],
@@ -47,7 +56,7 @@ export async function getCatalog() {
       // trusts the category embed's shape at compile time only — if it ever
       // comes back null or as an array (Supabase's FK-cardinality inference
       // can do that) this fails silently at render time, not here.
-      services: (services ?? []) as unknown as ServiceWithCategory[],
+      services: ((services ?? []) as unknown as ServiceWithCategory[]).map(withImage),
       staff: (staff ?? []) as Staff[],
       staffServices: (links ?? []) as { staff_id: string; service_id: string }[],
       workingHours: (hours ?? []) as WorkingHour[],
@@ -67,7 +76,8 @@ export async function getServiceBySlug(slug: string) {
       .eq("slug", slug)
       .eq("active", true)
       .maybeSingle();
-    return (data as unknown as ServiceWithCategory) ?? null;
+    const row = data as unknown as ServiceWithCategory | null;
+    return row ? withImage(row) : null;
   } catch {
     return null;
   }

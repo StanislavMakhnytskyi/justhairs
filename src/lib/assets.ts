@@ -1,6 +1,7 @@
 // Image assets live in the Supabase Storage "assets" bucket (public, CDN-served).
 // See public/ds/CREDITS.md for sources.
 import { BLUR } from "./blur.generated";
+import { SERVICE_IMAGES } from "./service-images.generated";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://vyrgrzmsslcaztkydlng.supabase.co";
@@ -29,6 +30,10 @@ export const HERO_VIDEO =
  */
 export function blurFor(url?: string | null): string | undefined {
   if (!url) return undefined;
+  // A bundled service picture (public/images/services) carries its own blur.
+  if (url.startsWith("/images/services/")) {
+    return Object.values(SERVICE_IMAGES).find((i) => i.src === url)?.blur;
+  }
   const path = url.split("/storage/v1/object/public/assets/")[1];
   return path ? BLUR[path] : undefined;
 }
