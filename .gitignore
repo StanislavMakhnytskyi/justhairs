@@ -55,3 +55,5 @@ next-env.d.ts
 # dev tooling output / personal Claude overrides
 /.shots/
 .claude/settings.local.json
+
+/.hero-build/

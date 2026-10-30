@@ -37,6 +37,7 @@ Named steps only — `text-hero 56 / display 32 / title 23 / heading 18 / subhea
 - Tokens in `@theme`: `animate-rise` (+ `.stagger` with `--i`), `animate-print` (ticket off the printer), `animate-stamp`, `animate-settle`, `animate-pill-in`, `animate-fade-in(-up)`, sheet/scrim.
 - `Reveal` (`components/ui/Reveal.tsx`) for scroll-in: content is visible by default and only hidden once the client knows it is below the fold.
 - **Rules**: every animation is `motion-safe:`; **no `animation-fill-mode: both/forwards` on entrances** (a frozen tab would pin the first frame at opacity 0 — `backwards` only, for stagger delays); the single `prefers-reduced-motion` block at the end of `globals.css` must keep covering new keyframes; nothing may be invisible without JS.
+- **Hero poster = video frame 0.** The still behind the hero video, the `<video poster>` and the blur placeholder are all the first frame of the encoded clip (`scripts/prepare-hero.mjs`), so the video takes over invisibly. Never use an unrelated photo as the hero still, and version new media (`HERO_VERSION`) rather than overwriting — the bucket is cached for a year.
 - Page transitions: **no root `<ViewTransition>`** — quick taps aborted it ("Transition was aborted") and surfaced as an unhandled rejection. Pages animate themselves.
 
 ## Colour, themes, surfaces

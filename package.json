@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck",
     "shots": "node scripts/shots.mjs",
-    "check:flow": "node scripts/flow-check.mjs"
+    "check:flow": "node scripts/flow-check.mjs",
+    "db:setup": "node scripts/build-setup-sql.mjs",
+    "db:setup:check": "node scripts/build-setup-sql.mjs --check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",

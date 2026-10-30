@@ -69,6 +69,3 @@ insert into staff_time_off (staff_id, starts_at, ends_at, reason) values
    (now() + interval '10 days')::date + time '00:00',
    (now() + interval '15 days')::date + time '00:00',
    'Vacation');
-
--- To create an admin: sign in through the app, then in the SQL editor run
---   update profiles set role = 'admin' where email = 'you@example.com';

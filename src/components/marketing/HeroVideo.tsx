@@ -2,7 +2,7 @@
 
 import { Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { HERO_IMAGE } from "@/lib/assets";
+import { HERO_POSTER } from "@/lib/assets";
 
 type Connection = { saveData?: boolean; effectiveType?: string };
 
@@ -73,11 +73,14 @@ export function HeroVideo({ mp4, webm }: { mp4: string; webm: string }) {
         playsInline
         autoPlay
         preload="metadata"
-        poster={HERO_IMAGE}
+        poster={HERO_POSTER}
         aria-hidden="true"
         tabIndex={-1}
-        onCanPlay={() => setReady(true)}
-        className={`absolute inset-0 -z-10 size-full object-cover transition-opacity duration-700 ease-[var(--ease-out)] ${
+        // Reveal only once frames are actually playing. The still underneath is
+        // this video's own first frame, so the hand-over is invisible; if
+        // autoplay is blocked the still simply stays.
+        onPlaying={() => setReady(true)}
+        className={`absolute inset-0 -z-10 size-full object-cover transition-opacity duration-300 ease-[var(--ease-out)] ${
           ready ? "opacity-100" : "opacity-0"
         }`}
       >

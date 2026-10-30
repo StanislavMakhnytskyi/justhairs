@@ -2,6 +2,7 @@
 // Tiny blurred previews keyed by their path in the Storage "assets" bucket.
 
 export const BLUR: Record<string, string> = {
+  "hero-2-poster.webp": "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAACQAQCdASoQAAkABUB8JZwAAqGGUMAA/u9KHuodcXOZXQ4JIUMCYrt/l0q4my9q9TWwAA==",
   "hero.webp": "data:image/webp;base64,UklGRkgAAABXRUJQVlA4IDwAAADQAQCdASoQAAoABUB8JZwAApQkEDLygAD+6CPsCo/camU7VOrXY/C3NMZIcERGe+P0SLx+AIP5FB5FAAA=",
   "services/mens-beard.webp": "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAABQAQCdASoQAAsABUB8JZQABDOAAP7vpc2uftyCuVVeCa3bGWoygFia/aFIfXPy8AA=",
   "services/mens-haircut-beard.webp": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAAAwAgCdASoQAAsABUB8JagCdAEesR2ibl04AADdAmf1LVG/Nj4fbjTYBSVG8cz62x+2YQJGqMtEezY/tshRwv2fZfZgLOnura1uWxfCFYOB+hWvAAA=",
