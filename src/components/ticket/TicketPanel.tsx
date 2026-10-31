@@ -1,4 +1,5 @@
 import { SmoothImage } from "@/components/ui/SmoothImage";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { SummaryRow } from "@/components/ui/SummaryList";
 import { formatDateTime, formatDuration, formatPrice } from "@/lib/format";
 
@@ -30,7 +31,7 @@ export function TicketPanel({
   return (
     <aside
       aria-label="Your ticket"
-      className="flex flex-col bg-surface-card text-text-primary motion-safe:animate-fade-in-up"
+      className="flex flex-col bg-surface-card text-text-primary"
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-sunken">
         {photoUrl ? (
@@ -65,6 +66,27 @@ export function TicketPanel({
       <div className="cut" aria-hidden />
       <div className="px-6 py-5">
         <SummaryRow label="Total" value={priceCents !== null ? formatPrice(priceCents) : EMPTY} strong />
+      </div>
+    </aside>
+  );
+}
+
+/** Same footprint as the filled-in TicketPanel (image, four lines, perforation,
+ *  total), so the loading state and the real panel swap without moving anything. */
+export function TicketPanelSkeleton() {
+  return (
+    <aside aria-hidden className="flex flex-col bg-surface-card">
+      <Skeleton className="aspect-[16/10] w-full rounded-none" />
+      <div className="flex flex-col gap-5 px-6 py-6">
+        <Skeleton className="h-[23px] w-2/3" />
+        <Skeleton className="h-[23px]" />
+        <Skeleton className="h-[23px]" />
+        <Skeleton className="h-[23px]" />
+        <Skeleton className="h-[23px]" />
+      </div>
+      <div className="cut" aria-hidden />
+      <div className="px-6 py-5">
+        <Skeleton className="h-[23px]" />
       </div>
     </aside>
   );
