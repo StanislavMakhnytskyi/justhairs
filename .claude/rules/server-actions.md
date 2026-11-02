@@ -11,4 +11,5 @@ paths:
 - Never call a server action in a loop or `Promise.all` fan-out: Next serialises action requests, so the last one waits for all the others. Batch into one RPC (see `get_day_availability`).
 - Contract: actions return `ActionResult`; the availability readers intentionally **throw** (so "empty" and "broken" differ) — callers must catch (`slot-cache.ts` does).
 - Known gaps are tracked in `CODE_REVIEW.md` with inline `KNOWN ISSUE (#N)` markers; fix the entry and the marker together.
-- Payment: no webhook. Confirmation reconciles via `reconcileCheckout`; keep it idempotent.
+- Payment: the Stripe webhook (`/api/stripe/webhook`, signature on the raw body) is the source of truth; `reconcileCheckout` on the confirmation page is the fast path. Both go through the `record_payment` RPC (row-locked, idempotent, checks session id + amount) — keep it that way.
+- Every booking mutation and the pay/confirmation pages require the per-booking `hold_token` cookie (`src/lib/hold-token.ts`); never accept a bare appointment id as proof of ownership.

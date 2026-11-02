@@ -43,3 +43,10 @@ export function formatDuration(minutes: number): string {
   const m = minutes % 60;
   return m ? `${h} h ${m} min` : `${h} h`;
 }
+
+/** "sara.test@gmail.com" -> "s***@gmail.com" — enough to recognise, not to harvest. */
+export function maskEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  if (at < 1) return "***";
+  return `${email[0]}***${email.slice(at)}`;
+}

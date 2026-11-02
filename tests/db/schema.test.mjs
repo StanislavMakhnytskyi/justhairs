@@ -188,7 +188,7 @@ describe("booking engine", () => {
     const ins = (code, extraCol, extraVal, when) =>
       db.query(
         `insert into appointments (service_id, staff_id, starts_at, ends_at, status, price_cents, confirmation_code, created_at${extraCol})
-         values ($1, $2, $3::timestamptz, $3::timestamptz + interval '30 minutes', 'confirmed', 1000, $4, now() - interval '30 minutes'${extraVal})`,
+         values ($1, $2, $3::timestamptz, $3::timestamptz + interval '30 minutes', 'confirmed', 1000, $4, now() - interval '31 minutes'${extraVal})`,
         [svc.id, st.id, when, code],
       );
     await ins("STALE1", "", "", "2032-01-05 09:00+00");
@@ -236,9 +236,10 @@ describe("schema hygiene", () => {
     assert.deepEqual(names(t), []);
   });
 
-  test("the last two migrations can be re-run without error", async () => {
+  test("the last three migrations (incl. 0009) can be re-run without error", async () => {
     const files = migrationFiles();
-    for (const f of files.slice(-2)) await apply(db, f);
-    for (const f of files.slice(-2)) await apply(db, f);
+    assert.ok(files.some((f) => String(f).includes("0009_")), "0009 is part of the set");
+    for (const f of files.slice(-3)) await apply(db, f);
+    for (const f of files.slice(-3)) await apply(db, f);
   });
 });
