@@ -345,3 +345,16 @@ exercised with a real booking.
 `aria-describedby` already reads the message when the field is focused, and the
 pay form moves focus to the first invalid field on submit, so adding `role="alert"`
 would announce it twice. Left as is; revisit if errors appear without a focus move.
+
+### 40. CI preview protection: Vercel Authentication blocks the PR smoke job — Medium
+`.github/workflows/smoke-pr.yml`, `playwright.config.ts`. If Vercel Authentication
+is on for Preview deployments, `/api/health` and every browser test get the
+login wall. Fix: in Vercel project > Settings > Deployment Protection >
+Protection Bypass for Automation, create a secret and store it as the GitHub
+Actions secret `VERCEL_AUTOMATION_BYPASS_SECRET` (or turn Vercel Authentication
+off for Previews). The warm-up step sends it as `x-vercel-protection-bypass`
+(masked in logs); Playwright exchanges it once for the `_vercel_jwt` cookie and
+loads it as `storageState`, so it is scoped to the preview host and never sent
+to Stripe or other third-party origins. Without the secret the job fails with an
+explicit `::error::` instead of a confusing health failure. Not yet exercised on
+a live run.
