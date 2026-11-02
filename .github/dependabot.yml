@@ -4,7 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    # Majors (TypeScript, ESLint, tailwind-variants, ...) can break the build or
+    # our tv()/tailwind-merge setup; upgrade them by hand, deliberately.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -12,3 +17,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
