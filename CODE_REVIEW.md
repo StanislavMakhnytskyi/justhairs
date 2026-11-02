@@ -38,7 +38,9 @@ to reconcile it after the fact.
 statement/transaction, and alert on deleting any row with a non-null
 `stripe_session_id`.
 
-### 3. `abandonBooking` / `payLater` / `startCheckout` trust a bare appointment id — High
+### 3. `abandonBooking` / `payLater` / `startCheckout` trust a bare appointment id — High — **Partly fixed**
+_The id is now schema-validated like every other action, and (migration 0007) appointment ids are no longer listable through the API. Still no proof of ownership._
+
 Same file. Unlike `createBooking`/`saveGuestDetails`, these three take
 `appointmentId: string` with no schema validation and no proof the caller is
 the guest who created the hold. Anyone who obtains the UUID (a shared link,
@@ -97,13 +99,17 @@ invisible until a customer reports it.
 
 ## C. Data access / performance
 
-### 9. `getOverallRating` averages in Node instead of in SQL — Medium
+### 9. `getOverallRating` averages in Node instead of in SQL — Medium — **Fixed**
+_Now reads the one-row `overall_rating` view (migration 0007); falls back to the old calculation until the migration is applied._
+
 `src/lib/reviews.ts`. Pulls every review row over the wire to compute one
 number, when the codebase already has the right pattern one function away
 (`service_ratings`/`staff_ratings`, migration `0002`). Fine at current scale,
 gets slower/costlier as reviews grow for no reason.
 
-### 10. Untyped `as` casts on Supabase join results — Low
+### 10. Untyped `as` casts on Supabase join results — Low — **Fixed**
+_The Supabase client is typed with `Database` (`src/lib/supabase/database.types.ts`, kept in sync with the schema by `tests/db/types.test.mjs`) and the casts are gone._
+
 `src/lib/actions/booking.ts` (`loadPayable`) and `src/lib/queries.ts`
 (`getCatalog`'s `as unknown as ServiceWithCategory[]`). These trust the
 query's shape at compile time only; a renamed column or a changed embed
@@ -119,7 +125,9 @@ the overwrite bug that was already fixed.
 
 ## D. Dead code / product-copy drift
 
-### 12. Auth-era schema is still in the database — Low
+### 12. Auth-era schema is still in the database — Low — **Fixed, pending apply**
+_Migration 0007 closes these tables to the API; the optional, destructive `0008_drop_unused_auth_schema.sql` drops them._
+
 `supabase/migrations/0001_init.sql`. `profiles`, `orders`, `order_items`,
 `payments`, `favorites`, `notifications`, `is_admin()` and their RLS policies
 are all dead since auth was removed (`0003_guest_booking_no_auth.sql`) —
@@ -196,8 +204,42 @@ failing, which produces no GitHub check on the PR.
 Works today by accident — stops working the moment that transitive
 dependency changes.
 
-### 23. Zero unit/integration test coverage — Medium
+### 23. Zero unit/integration test coverage — Medium — **Partly fixed**
+_`npm run test:db` runs every migration and the seed on an in-memory Postgres (PGlite) and tests the booking engine, grants/RLS, functions, indexes and the generated types — no live project needed, and it runs in CI. The app itself is still covered only by the Playwright suite._
+
 All correctness coverage (`tests/`) is live-site Playwright E2E on the happy
 path. The booking engine's actual business rules (slot generation, the
 double-booking check in #1, Zod validation edges) have no test that runs
 without a live deployment and a live Supabase project.
+
+## H. Supabase usage audit (this pass)
+
+Found by reading every migration against Supabase's own advisor rules and
+RLS/function guidance, then proven with `npm run test:db`. Details and the
+access model are in [docs/supabase.md](docs/supabase.md). **Fixed in code and in
+`0007_harden_and_index.sql`; the migration is not applied to the live project
+until its owner runs it.**
+
+### 24. The booking functions were callable by anyone holding the public key — High — **Fixed (pending 0007)**
+`book_appointment`, `get_available_slots` and `get_day_availability` were
+granted to `anon`, so `/rest/v1/rpc/...` accepted direct calls that skipped the
+app's Zod validation — enough to flood the calendar with holds. Every call
+already came from the Next.js server, so they are now `service_role`-only and
+the actions use the server client. (Advisor 0028.)
+
+### 25. `reviews` exposed `appointment_id` publicly — High — **Fixed (pending 0007)**
+A guest's confirmation page (name + email) is addressed by appointment id, and
+the public `reviews` table listed those ids. Only the display columns are
+granted to the API roles now; `appointment_id` is not readable.
+
+### 26. Grants relied on RLS alone; policies named no role — Medium — **Fixed (pending 0007)**
+Every table granted full DML to `anon`/`authenticated`, with policies that
+applied to every role and called `auth.uid()`/`is_admin()` per row (advisors
+0003, 0024). Everything is revoked and only the catalog reads are re-granted;
+policies name `anon, authenticated`. `staff_time_off` (leave reasons) and
+`app_settings` are no longer public.
+
+### 27. `search_path` and missing foreign-key indexes — Medium — **Fixed (pending 0007)**
+Functions used `search_path = public` (or none) — now `''` with qualified
+names (advisor 0011). Seven foreign keys had no index and one index was dead
+(advisors 0001, 0005); pgcrypto sat in `public` (0014).

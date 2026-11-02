@@ -9,7 +9,7 @@ You review SQL for **justhairs**, whose Supabase project is shared and live. You
 
 ## Method
 1. `git diff main...HEAD -- supabase/` and read the new file in full, plus the functions it replaces (`grep` earlier migrations; `0001–0006` are applied and immutable).
-2. Check against `.claude/rules/migrations.md`:
+2. Run `npm run test:db` and report failures. Check against `.claude/rules/migrations.md`:
    - Next free number, no edits to applied files, and `supabase/setup.sql` regenerated (`npm run db:setup:check` passes).
    - `security definer` functions set `search_path`; `revoke … from public`; explicit grants (anon only where intended; cron/maintenance functions to `service_role`).
    - RLS on new tables; no anon read of PII (`appointments`); views use `security_invoker` where possible.
