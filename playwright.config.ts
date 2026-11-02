@@ -27,6 +27,8 @@ if (!baseURL) {
 
 export default defineConfig({
   testDir: "./tests",
+  // tests/db are node:test files that run against an in-memory Postgres (npm run test:db).
+  testIgnore: "**/db/**",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

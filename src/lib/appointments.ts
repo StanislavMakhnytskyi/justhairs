@@ -1,14 +1,17 @@
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
-import type { Appointment, Service, Staff } from "@/lib/supabase/types";
+import type { Appointment, PaymentStatus, Service, Staff } from "@/lib/supabase/types";
 
 export type AppointmentDetail = Appointment & {
   service: Pick<Service, "id" | "name" | "slug" | "duration_min">;
   staff: Pick<Staff, "id" | "name" | "title"> | null;
 };
 
-const SELECT =
-  "*, service:services(id,name,slug,duration_min), staff:staff(id,name,title)";
+/** payment_status is a text column guarded by a CHECK constraint, so the
+ *  generated type is `string`; narrow it (and fail safe) in one place. */
+export function toPaymentStatus(value: string): PaymentStatus {
+  return value === "paid" || value === "pay_later" ? value : "unpaid";
+}
 
 /**
  * One appointment by id, for the payment + confirmation pages. Appointments
@@ -25,13 +28,16 @@ export async function getAppointment(id: string) {
   if (!isSupabaseConfigured) return null;
   try {
     const supabase = createAdminClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("appointments")
-      .select(SELECT)
+      .select("*, service:services(id, name, slug, duration_min), staff:staff(id, name, title)")
       .eq("id", id)
       .maybeSingle();
-    return (data as AppointmentDetail | null) ?? null;
-  } catch {
+    if (error) throw new Error(error.message);
+    if (!data) return null;
+    return { ...data, payment_status: toPaymentStatus(data.payment_status) };
+  } catch (e) {
+    console.error("[supabase] getAppointment failed:", e);
     return null;
   }
 }

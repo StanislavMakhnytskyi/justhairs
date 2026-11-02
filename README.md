@@ -119,6 +119,7 @@ npm run dev
 | --- | --- |
 | `npm run dev` / `build` / `start` | Next.js dev server / production build / serve build |
 | `npm run lint` | ESLint |
+| `npm run test:db` | Run every migration + the seed on an in-memory Postgres (PGlite) and test grants/RLS, functions, indexes, the booking engine and `database.types.ts` — no live project |
 | `npm run db:setup` | Regenerate `supabase/setup.sql` from the migrations + seed (`db:setup:check` verifies it) |
 | `npm run test:smoke` | Route + RPC checks against `TEST_PROD_URL` |
 | `npm run test:e2e` | Full booking flows, incl. Stripe test payment |
@@ -187,12 +188,13 @@ src/
     queries.ts, appointments.ts  Catalog reads; appointment read + Stripe reconcile
     stripe.ts                    Stripe client (null without a key)
 supabase/
-  migrations/                    Ordered history, 0001–0006 (upgrade path for an existing project)
+  migrations/                    Ordered history, 0001–0008 (upgrade path for an existing project)
   setup.sql                      Generated one-shot bundle: all migrations + seed (fresh install)
   seed.sql                       Demo salon, services, staff, hours
 scripts/                         seed-demo, sync-catalog, gen-blur, build-setup-sql
 tests/                           smoke/, e2e/, support/
-CODE_REVIEW.md                   Self-review: 23 tracked findings
+CODE_REVIEW.md                   Self-review: 27 tracked findings
+docs/supabase.md                 How this project uses Supabase: access model, keys, functions, migrations, tests
 ```
 
 ## Booking engine

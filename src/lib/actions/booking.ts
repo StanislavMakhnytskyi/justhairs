@@ -2,7 +2,8 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
-import { createAdminClient, createPublicClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { toPaymentStatus } from "@/lib/appointments";
 import { stripe } from "@/lib/stripe";
 import { formatDateTime } from "@/lib/format";
 
@@ -61,7 +62,9 @@ export async function createBooking(
   const parsed = bookSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid booking details." };
 
-  const supabase = createPublicClient();
+  // The booking functions are server-only: the public key cannot call them
+  // (migration 0007), so they run with the server client.
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("book_appointment", {
     p_service_id: parsed.data.serviceId,
     p_staff_id: parsed.data.staffId,
@@ -76,8 +79,7 @@ export async function createBooking(
     return { ok: false, error: "Could not create the booking. Please try again." };
   }
 
-  const row = data as { id: string; confirmation_code: string | null };
-  return { ok: true, data: { id: row.id, code: row.confirmation_code ?? "" } };
+  return { ok: true, data: { id: data.id, code: data.confirmation_code ?? "" } };
 }
 
 // TODO (CODE_REVIEW.md #7): these two throw instead of returning
@@ -90,7 +92,7 @@ export async function getAvailableSlots(input: {
 }): Promise<string[]> {
   const parsed = slotsSchema.safeParse(input);
   if (!parsed.success) throw new Error("Invalid availability request.");
-  const supabase = createPublicClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("get_available_slots", {
     p_service_id: parsed.data.serviceId,
     p_staff_id: parsed.data.staffId,
@@ -98,9 +100,11 @@ export async function getAvailableSlots(input: {
   });
   // Throw on a real RPC failure so callers can tell "the lookup broke" apart
   // from "this day genuinely has no slots" (an empty array).
-  if (error) throw new Error(error.message || "Could not load availability.");
-  if (!data) return [];
-  return (data as { starts_at: string }[]).map((s) => s.starts_at);
+  if (error) {
+    console.error("get_available_slots failed", error);
+    throw new Error(error.message || "Could not load availability.");
+  }
+  return (data ?? []).map((s) => s.starts_at);
 }
 
 /** Availability for a whole range in one round trip (see migration 0004). */
@@ -112,16 +116,18 @@ export async function getDayAvailability(input: {
 }): Promise<string[]> {
   const parsed = rangeSchema.safeParse(input);
   if (!parsed.success) throw new Error("Invalid availability request.");
-  const supabase = createPublicClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("get_day_availability", {
     p_service_id: parsed.data.serviceId,
     p_staff_id: parsed.data.staffId,
     p_from: parsed.data.from,
     p_days: parsed.data.days,
   });
-  if (error) throw new Error(error.message || "Could not load availability.");
-  if (!data) return [];
-  return (data as { starts_at: string }[]).map((s) => s.starts_at);
+  if (error) {
+    console.error("get_day_availability failed", error);
+    throw new Error(error.message || "Could not load availability.");
+  }
+  return (data ?? []).map((s) => s.starts_at);
 }
 
 const contactSchema = z.object({
@@ -132,29 +138,15 @@ const contactSchema = z.object({
 });
 
 async function loadPayable(appointmentId: string) {
-  const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await createAdminClient()
     .from("appointments")
     .select(
       "id, status, payment_status, price_cents, starts_at, customer_email, service:services(name)",
     )
     .eq("id", appointmentId)
     .maybeSingle();
-  // KNOWN ISSUE (CODE_REVIEW.md #10): trusts the query's shape at compile
-  // time only — a renamed column or the `service` embed coming back as an
-  // array (Supabase's FK-cardinality inference can do that) fails silently
-  // with undefined fields rather than a type error.
-  return data as
-    | {
-        id: string;
-        status: string;
-        payment_status: string;
-        price_cents: number;
-        starts_at: string;
-        customer_email: string | null;
-        service: { name: string } | null;
-      }
-    | null;
+  if (error) console.error("loadPayable failed", error);
+  return data ? { ...data, payment_status: toPaymentStatus(data.payment_status) } : null;
 }
 
 /** Save the guest's contact details onto the held appointment. */
@@ -186,24 +178,25 @@ export async function saveGuestDetails(
 
 /** Back out of a held booking before paying — frees the slot again.
  *
- *  KNOWN ISSUE (CODE_REVIEW.md #3): appointmentId isn't schema-validated and
- *  there's no proof of ownership — anyone with the UUID can call this (and
- *  payLater / startCheckout below) for someone else's booking. Bounded by
- *  UUIDs not being enumerable, but inconsistent with createBooking/
- *  saveGuestDetails, which do validate.
+ *  KNOWN ISSUE (CODE_REVIEW.md #3, partly addressed): the id is now
+ *  schema-validated like every other action, but there's still no proof of
+ *  ownership — anyone with the UUID can call this (and payLater /
+ *  startCheckout below) for someone else's booking. Bounded by UUIDs not being
+ *  enumerable (and, since migration 0007, not listable through the API).
  */
 export async function abandonBooking(
-  appointmentId: string,
+  rawAppointmentId: string,
 ): Promise<ActionResult> {
+  const parsedId = id.safeParse(rawAppointmentId);
+  if (!parsedId.success) return { ok: false, error: "Invalid booking." };
+  const appointmentId = parsedId.data;
+
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data: row } = await supabase
     .from("appointments")
     .select("payment_status, stripe_session_id")
     .eq("id", appointmentId)
     .maybeSingle();
-  const row = data as
-    | { payment_status: string; stripe_session_id: string | null }
-    | null;
   if (!row) return { ok: true, data: undefined };
   if (row.payment_status === "paid") {
     return { ok: false, error: "This booking is already paid." };
@@ -243,8 +236,11 @@ export async function abandonBooking(
 
 /** Choose to settle up at the salon. */
 export async function payLater(
-  appointmentId: string,
+  rawAppointmentId: string,
 ): Promise<ActionResult> {
+  const parsedId = id.safeParse(rawAppointmentId);
+  if (!parsedId.success) return { ok: false, error: "Invalid booking." };
+  const appointmentId = parsedId.data;
   const appt = await loadPayable(appointmentId);
   if (!appt || appt.status === "cancelled") {
     return { ok: false, error: "This booking is no longer active." };
@@ -268,9 +264,12 @@ function siteOrigin(host: string | null): string {
 
 /** Create a Stripe Checkout session for the full service price. */
 export async function startCheckout(
-  appointmentId: string,
+  rawAppointmentId: string,
 ): Promise<ActionResult<{ url: string }>> {
   if (!stripe) return { ok: false, error: "Card payments aren't set up yet." };
+  const parsedId = id.safeParse(rawAppointmentId);
+  if (!parsedId.success) return { ok: false, error: "Invalid booking." };
+  const appointmentId = parsedId.data;
 
   const appt = await loadPayable(appointmentId);
   if (!appt || appt.status === "cancelled") {

@@ -14,43 +14,57 @@ export type LatestReview = {
 export async function getLatestReviews(limit = 3): Promise<LatestReview[]> {
   if (!isSupabaseConfigured) return [];
   try {
-    const supabase = createPublicClient();
-    const { data } = await supabase
+    const { data, error } = await createPublicClient()
       .from("public_reviews")
       .select("id, rating, comment, created_at, reviewer_first, service_name, staff_name")
       .not("comment", "is", null)
       .order("created_at", { ascending: false })
       .limit(limit);
-    return (data ?? []).map((r: Record<string, unknown>) => ({
-      id: r.id as string,
-      rating: r.rating as number,
-      comment: r.comment as string | null,
-      created_at: r.created_at as string,
-      reviewer: (r.reviewer_first as string | null)?.trim() || "A client",
-      service_name: (r.service_name as string | null) ?? null,
-      staff_name: (r.staff_name as string | null) ?? null,
-    }));
-  } catch {
+    if (error) throw new Error(error.message);
+    // View columns are all nullable in the generated types; drop any row that
+    // can't be shown rather than render a half-empty slip.
+    return (data ?? []).flatMap((r) =>
+      r.id && r.rating !== null && r.created_at
+        ? [
+            {
+              id: r.id,
+              rating: r.rating,
+              comment: r.comment,
+              created_at: r.created_at,
+              reviewer: r.reviewer_first?.trim() || "A client",
+              service_name: r.service_name,
+              staff_name: r.staff_name,
+            },
+          ]
+        : [],
+    );
+  } catch (e) {
+    console.error("[supabase] getLatestReviews failed:", e);
     return [];
   }
 }
 
-// TODO (CODE_REVIEW.md #9): pulls every review row over the wire to average
-// in Node, instead of an aggregate query — service_ratings/staff_ratings
-// (migration 0002) already show the right pattern one function away.
+/** The salon-wide score: one aggregate row from the `overall_rating` view. */
 export async function getOverallRating(): Promise<Rating | null> {
   if (!isSupabaseConfigured) return null;
+  const supabase = createPublicClient();
   try {
-    const supabase = createPublicClient();
-    const { data } = await supabase.from("reviews").select("rating");
-    if (!data || data.length === 0) return null;
-    const sum = data.reduce((a, r) => a + (r as { rating: number }).rating, 0);
-    return {
-      rating: Math.round((sum / data.length) * 10) / 10,
-      review_count: data.length,
-    };
-  } catch {
-    return null;
+    const { data, error } = await supabase.from("overall_rating").select("rating, review_count").maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data || !data.review_count || data.rating === null) return null;
+    return { rating: Number(data.rating), review_count: data.review_count };
+  } catch (e) {
+    // The view arrives with migration 0007. Until it is applied, fall back to
+    // averaging the (display-column-only) review ratings here.
+    console.warn("[supabase] overall_rating unavailable, averaging in Node:", e);
+    try {
+      const { data } = await supabase.from("reviews").select("rating");
+      if (!data || data.length === 0) return null;
+      const sum = data.reduce((a, r) => a + r.rating, 0);
+      return { rating: Math.round((sum / data.length) * 10) / 10, review_count: data.length };
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -60,18 +74,22 @@ export async function getRatingsMap(
   if (!isSupabaseConfigured) return {};
   try {
     const supabase = createPublicClient();
-    const { data } = await supabase.from(view).select("*");
-    const key = view === "service_ratings" ? "service_id" : "staff_id";
+    const res =
+      view === "service_ratings"
+        ? await supabase.from("service_ratings").select("service_id, rating, review_count")
+        : await supabase.from("staff_ratings").select("staff_id, rating, review_count");
+    if (res.error) throw new Error(res.error.message);
+
     const out: Record<string, Rating> = {};
-    for (const row of data ?? []) {
-      const r = row as Record<string, unknown>;
-      out[r[key] as string] = {
-        rating: Number(r.rating),
-        review_count: r.review_count as number,
-      };
+    for (const r of res.data ?? []) {
+      const id = "service_id" in r ? r.service_id : r.staff_id;
+      if (id && r.rating !== null && r.review_count !== null) {
+        out[id] = { rating: Number(r.rating), review_count: r.review_count };
+      }
     }
     return out;
-  } catch {
+  } catch (e) {
+    console.error(`[supabase] getRatingsMap(${view}) failed:`, e);
     return {};
   }
 }

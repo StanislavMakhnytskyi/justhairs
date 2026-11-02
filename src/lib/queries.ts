@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createPublicClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { SERVICE_PHOTOS, STAFF_PHOTOS } from "@/lib/photos.generated";
 import type { Service, ServiceCategory, Staff } from "@/lib/supabase/types";
@@ -35,17 +36,26 @@ const EMPTY_CATALOG = {
   workingHours: [] as WorkingHour[],
 };
 
-export async function getCatalog() {
+type Failure = { message: string } | null;
+
+/** Throw on a Supabase error so the caller's catch logs it and falls back —
+ *  instead of an RLS or grant mistake silently turning into an empty catalog. */
+function rows<T>(label: string, res: { data: T[] | null; error: Failure }): T[] {
+  if (res.error) throw new Error(`${label}: ${res.error.message}`);
+  return res.data ?? [];
+}
+function row<D>(label: string, res: { data: D; error: Failure }): D {
+  if (res.error) throw new Error(`${label}: ${res.error.message}`);
+  return res.data;
+}
+
+// React `cache` dedupes calls within one render pass (e.g. generateMetadata and
+// the page both asking for the same service); ISR still handles the rest.
+export const getCatalog = cache(async () => {
   if (!isSupabaseConfigured) return EMPTY_CATALOG;
   try {
     const supabase = createPublicClient();
-    const [
-      { data: categories },
-      { data: services },
-      { data: staff },
-      { data: links },
-      { data: hours },
-    ] = await Promise.all([
+    const [categories, services, staff, links, hours] = await Promise.all([
       supabase.from("service_categories").select("*").order("sort"),
       supabase
         .from("services")
@@ -54,57 +64,56 @@ export async function getCatalog() {
         .order("price_cents"),
       supabase.from("staff").select("*").eq("active", true).order("name"),
       supabase.from("staff_services").select("staff_id, service_id"),
-      supabase
-        .from("staff_working_hours")
-        .select("staff_id, weekday, start_time, end_time"),
+      supabase.from("staff_working_hours").select("staff_id, weekday, start_time, end_time"),
     ]);
     return {
-      categories: (categories ?? []) as ServiceCategory[],
-      // KNOWN ISSUE (CODE_REVIEW.md #10): the double-cast through `unknown`
-      // trusts the category embed's shape at compile time only — if it ever
-      // comes back null or as an array (Supabase's FK-cardinality inference
-      // can do that) this fails silently at render time, not here.
-      services: ((services ?? []) as unknown as ServiceWithCategory[]).map(withServicePhoto),
-      staff: ((staff ?? []) as Staff[]).map(withStaffPhoto),
-      staffServices: (links ?? []) as { staff_id: string; service_id: string }[],
-      workingHours: (hours ?? []) as WorkingHour[],
+      categories: rows("service_categories", categories),
+      services: rows("services", services).map(withServicePhoto),
+      staff: rows("staff", staff).map(withStaffPhoto),
+      staffServices: rows("staff_services", links),
+      workingHours: rows("staff_working_hours", hours),
     };
-  } catch {
+  } catch (e) {
+    console.error("[supabase] getCatalog failed:", e);
     return EMPTY_CATALOG;
   }
-}
+});
 
-export async function getServiceBySlug(slug: string) {
+export const getServiceBySlug = cache(async (slug: string) => {
   if (!isSupabaseConfigured) return null;
   try {
-    const supabase = createPublicClient();
-    const { data } = await supabase
-      .from("services")
-      .select("*, category:service_categories(*)")
-      .eq("slug", slug)
-      .eq("active", true)
-      .maybeSingle();
-    const row = data as unknown as ServiceWithCategory | null;
-    return row ? withServicePhoto(row) : null;
-  } catch {
+    const service = row(
+      "services by slug",
+      await createPublicClient()
+        .from("services")
+        .select("*, category:service_categories(*)")
+        .eq("slug", slug)
+        .eq("active", true)
+        .maybeSingle(),
+    );
+    return service ? withServicePhoto(service) : null;
+  } catch (e) {
+    console.error("[supabase] getServiceBySlug failed:", e);
     return null;
   }
-}
+});
 
 export async function getStaffForService(serviceId: string) {
   if (!isSupabaseConfigured) return [];
   try {
-    const supabase = createPublicClient();
-    const { data } = await supabase
-      .from("staff_services")
-      .select("staff:staff(*)")
-      .eq("service_id", serviceId);
-    return (
-      (data ?? []).map((r) => r.staff).filter(Boolean) as unknown as Staff[]
-    )
-      .filter((s) => s.active)
+    const links = rows(
+      "staff for service",
+      await createPublicClient()
+        .from("staff_services")
+        .select("staff:staff(*)")
+        .eq("service_id", serviceId),
+    );
+    return links
+      .map((r) => r.staff)
+      .filter((s): s is Staff => !!s && s.active)
       .map(withStaffPhoto);
-  } catch {
+  } catch (e) {
+    console.error("[supabase] getStaffForService failed:", e);
     return [];
   }
 }
@@ -113,13 +122,11 @@ export async function getOpenWeekdays(): Promise<number[]> {
   const fallback = [2, 3, 4, 5, 6];
   if (!isSupabaseConfigured) return fallback;
   try {
-    const supabase = createPublicClient();
-    const { data } = await supabase
-      .from("staff_working_hours")
-      .select("weekday");
-    const set = [...new Set((data ?? []).map((r) => r.weekday as number))];
-    return set.length ? set : fallback;
-  } catch {
+    const hours = rows("working hours", await createPublicClient().from("staff_working_hours").select("weekday"));
+    const days = [...new Set(hours.map((r) => r.weekday))];
+    return days.length ? days : fallback;
+  } catch (e) {
+    console.error("[supabase] getOpenWeekdays failed:", e);
     return fallback;
   }
 }
