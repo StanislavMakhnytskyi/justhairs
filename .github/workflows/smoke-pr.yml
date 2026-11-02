@@ -76,7 +76,9 @@ jobs:
           bypass=()
           if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
             echo "::add-mask::$VERCEL_AUTOMATION_BYPASS_SECRET"
-            bypass=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "x-vercel-set-bypass-cookie: true")
+            # The header alone authorizes each request. Do NOT add x-vercel-set-bypass-cookie
+            # here: Vercel then answers 307 (sets a cookie, redirects) and curl does not follow it.
+            bypass=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET")
           fi
           for p in /book /services /api/health; do
             curl -s -o /dev/null "${bypass[@]}" --retry 5 --retry-delay 5 --retry-all-errors --max-time 60 "$URL$p" || true
@@ -94,6 +96,12 @@ jobs:
             fi
             exit 1
           fi
+          case "$code" in
+            3??)
+              echo "::error::/api/health answered with a redirect (HTTP $code), not JSON. Check the preview URL and deployment protection settings."
+              exit 1
+              ;;
+          esac
           if [ "$code" = "404" ] || [ "$code" = "000" ]; then
             echo "::warning::/api/health not reachable (HTTP $code); continuing"
             exit 0
