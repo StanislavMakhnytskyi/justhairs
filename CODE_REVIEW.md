@@ -1,9 +1,10 @@
 # Code review — known issues & deferred tradeoffs
 
 A self-review pass over the whole project, done the way an outside senior
-engineer would: looking for real bugs and gaps, not style preferences. Nothing
-here is fixed yet — that's deliberate; this is the tracked list of what's
-known and will be addressed later. The most load-bearing findings are also
+engineer would: looking for real bugs and gaps, not style preferences. This is
+the tracked list of what's known: entries marked **Fixed** are resolved in the
+code (some pending a migration the owner has to apply), the rest are open —
+those tagged _planned: P3_ are scheduled for the next pass. The most load-bearing findings are also
 marked inline in the code as `// KNOWN ISSUE (CODE_REVIEW.md #N)` (a real bug
 or gap) or `// TODO (CODE_REVIEW.md #N)` (a deliberate simplification, not
 currently broken), so the reasoning lives next to the code it's about.
@@ -14,7 +15,9 @@ fixing, not urgent.
 
 ## A. Booking-engine concurrency / data integrity
 
-### 1. `book_appointment` has no DB-level double-booking guard — High
+### 1. `book_appointment` has no DB-level double-booking guard — High — **Fixed**
+_Migration 0006 adds a GiST exclusion constraint on `(staff_id, tstzrange(starts_at, ends_at))` for active statuses; a losing concurrent caller gets the distinct SQLSTATE `JH409`. Covered by `npm run test:db`. (The comment in `0003` still carries the old marker: that migration is immutable, and the constraint supersedes it.)_
+
 `supabase/migrations/0001_init.sql` (function `book_appointment`, carried
 forward in `0003_guest_booking_no_auth.sql`). The function checks
 `not exists (... overlapping appointments ...)` and then `insert`s, all
@@ -28,7 +31,9 @@ availability; this is the server-side gap that actually enforces it.
 `(staff_id, tstzrange(starts_at, ends_at))` for active statuses, or
 `SELECT ... FOR UPDATE` the conflicting rows before inserting.
 
-### 2. `abandonBooking` can delete a booking that just got paid — High
+### 2. `abandonBooking` can delete a booking that just got paid — High — **Fixed (pending 0009)**
+_`abandonBooking` now expires the Checkout session, then cancels through `cancel_unpaid_booking` (row lock, refuses a paid row); it never deletes a row with a session, and it only acts on confirmed + unpaid rows. Pay-at-salon (`pay_later`) bookings are intentional and are not swept (the per-client open-hold cap bounds abuse); `payLater` expires any open Checkout session first. The Stripe webhook (`/api/stripe/webhook` -> `record_payment`) reconciles payments independently of the browser._
+
 `src/lib/actions/booking.ts`. It retrieves the Stripe session, decides "not
 paid," and only *then* deletes the row. If the guest finishes paying on
 Stripe's hosted page in that window, the row is deleted after being paid for
@@ -38,8 +43,8 @@ to reconcile it after the fact.
 statement/transaction, and alert on deleting any row with a non-null
 `stripe_session_id`.
 
-### 3. `abandonBooking` / `payLater` / `startCheckout` trust a bare appointment id — High — **Partly fixed**
-_The id is now schema-validated like every other action, and (migration 0007) appointment ids are no longer listable through the API. Still no proof of ownership._
+### 3. `abandonBooking` / `payLater` / `startCheckout` trust a bare appointment id — High — **Fixed (pending 0009)**
+_Each hold now has a `hold_token` (migration 0009) that `createBooking` stores in an HttpOnly cookie; every mutation and the pay/confirmation pages require it. A bare id opens nothing._
 
 Same file. Unlike `createBooking`/`saveGuestDetails`, these three take
 `appointmentId: string` with no schema validation and no proof the caller is
@@ -71,7 +76,9 @@ things were needed, not one:
 
 ## B. Error handling / diagnosability
 
-### 5. Booking-failure classification is a substring match on Postgres text — Medium
+### 5. Booking-failure classification is a substring match on Postgres text — Medium — **Fixed**
+_`createBooking` switches on `error.code` (`JH409` slot taken, `JH429` too many holds); any other DB error is logged and reported generically._
+
 `src/lib/actions/booking.ts`, `createBooking`. `error.message.includes("no
 longer available")` silently buckets every *other* DB error (constraint
 violations, connection issues) into the same generic "Could not create the
@@ -80,7 +87,9 @@ hiccup, with nothing logged to tell them apart.
 **Fix direction:** switch on `error.code`/a distinct `errcode` raised by the
 RPC instead of matching message text.
 
-### 6. `startCheckout`'s Stripe call has a blanket `catch {}` — Medium
+### 6. `startCheckout`'s Stripe call has a blanket `catch {}` — Medium — **Fixed**
+_Errors are logged with Stripe's type/code; sessions are reused, expire after ~31 min and carry an idempotency key._
+
 Same file. A bad amount, an expired key, a network blip, and a genuine Stripe
 outage all collapse into one "Could not start checkout" with no server-side
 log — impossible to tell "user should retry" from "someone should look at
@@ -149,7 +158,9 @@ migration history.
 
 ## E. Frontend correctness / accessibility
 
-### 15. An unrecognized `?step=` can strand the user on a blank flow — High
+### 15. An unrecognized `?step=` can strand the user on a blank flow — High — **Fixed**
+_`BookingFlow` falls back to the first step whose inputs are missing, and never shows a step whose inputs are absent._
+
 `src/app/book/BookingFlow.tsx`. `step` is taken directly from
 `STEPS.findIndex(...)` on the URL param with no fallback; a garbage or
 hand-edited `?step=` value produces `-1`, and none of the `step === 0..3`
@@ -158,18 +169,24 @@ page.
 **Fix direction:** fall back to inferring the step from which fields are
 actually filled when the URL value doesn't match a known step.
 
-### 16. Booking-confirm error isn't announced to screen readers — Low
+### 16. Booking-confirm error isn't announced to screen readers — Low — **Fixed**
+_The step-3 error paragraph now has `role="alert"`._
+
 `src/app/book/BookingFlow.tsx`, the step-3 error paragraph. Missing
 `role="alert"` — inconsistent with the equivalent error text in `PayForm`,
 which has it. A screen-reader user who fails to confirm gets no auditory
 feedback at all.
 
-### 17. A failed `abandonBooking` leaves the back button silently dead — Medium
-`src/app/book/pay/[id]/PayTopBar.tsx`. If the server action rejects (network
+### 17. A failed `abandonBooking` leaves the back button silently dead — Medium — **Fixed**
+_`PayTopBar` catches a rejected or refused `abandonBooking`, stays on the page and shows an alert (`UNREACHABLE` or the server's message)._
+
+`src/app/(secure)/book/pay/[id]/PayTopBar.tsx`. If the server action rejects (network
 blip), `router.push` never runs and nothing tells the user anything went
 wrong — the back arrow just does nothing.
 
-### 18. `/services` renders nothing until hydration — Low
+### 18. `/services` renders nothing until hydration — Low — **Fixed**
+_The `Suspense` fallback is now the server-rendered service list (default tab as plain links), not `null`._
+
 `src/app/services/page.tsx`, `<Suspense fallback={null}>`. Required because
 `ServiceCategoryTabs` reads `useSearchParams()`, but `fallback={null}` means
 the page's actual content — the service list — is an empty shell on first
@@ -177,7 +194,9 @@ paint. The codebase already has `SkeletonList` for exactly this.
 
 ## F. The 200-vs-404 bug (already caught by the regression suite)
 
-### 19. `notFound()` returns HTTP 200 on `/book/pay/[id]` and `/book/confirmation/[id]` — Medium
+### 19. `notFound()` returns HTTP 200 on `/book/pay/[id]` and `/book/confirmation/[id]` — Medium — **Fixed**
+_The two pages moved into the `(secure)` route group (and the home page into `(home)`), so the unknown-id lookup now yields a real 404; `tests/smoke/routes.spec.ts` asserts it._
+
 `src/lib/appointments.ts` (`getAppointment`) plus both page components. Next
 commits the response status before the async appointment lookup's
 `notFound()` throws, so a nonexistent id renders "Page not found" correctly
@@ -192,13 +211,17 @@ matching what the test file itself says.
 
 ## G. Project / tooling
 
-### 21. No CI gate on pull requests — High
+### 21. No CI gate on pull requests — High — **Fixed**
+_`.github/workflows/ci.yml` runs lint, typecheck and a production build on every PR and on pushes to `main`._
+
 PRs get the Playwright smoke suite (`smoke-pr.yml`, against the Vercel
 preview), but there is still no `lint`/`tsc --noEmit`/`build` check on PRs
 themselves. A broken build can merge; the only signal is Vercel's own build
 failing, which produces no GitHub check on the PR.
 
-### 22. `sharp` is used but not declared — Medium
+### 22. `sharp` is used but not declared — Medium — **Fixed**
+_`sharp` is declared in `package.json`._
+
 `scripts/gen-blur.mjs` imports `sharp` directly; it's not in
 `package.json` at all, only present because Next pulls it in transitively.
 Works today by accident — stops working the moment that transitive
@@ -243,3 +266,82 @@ policies name `anon, authenticated`. `staff_time_off` (leave reasons) and
 Functions used `search_path = public` (or none) — now `''` with qualified
 names (advisor 0011). Seven foreign keys had no index and one index was dead
 (advisors 0001, 0005); pgcrypto sat in `public` (0014).
+
+## I. Open items from the P1/P2 audit
+
+Found while hardening payments, holds and headers. None of these is a regression
+from the fixes above; they are the gaps that remain. Items tagged _planned: P3_
+are scheduled for the next pass.
+
+### 28. The CSP is report-only and allows `'unsafe-inline'` scripts — Medium
+`next.config.ts`. The policy ships as `Content-Security-Policy-Report-Only`, and
+`script-src` includes `'unsafe-inline'` because the pages are statically
+generated / ISR and cannot carry a per-request nonce. It reports but blocks
+nothing, and inline scripts are not restricted.
+**Fix direction:** watch the reports, then enforce; move to nonces or hashes if
+the pages can become dynamic.
+
+### 29. Environment validation is non-fatal — Low
+`src/lib/env.ts`, `src/instrumentation.ts`. A missing or malformed variable is
+logged at start-up and surfaced as 503 from `/api/health`, but the app still
+boots and the affected features fail at request time. Deliberate (builds and CI
+run without secrets); the cost is that a bad deploy is not stopped by the app
+itself.
+**Fix direction:** fail the deploy from a post-deploy health check.
+
+### 30. Home "Open today" can be up to 10 minutes stale — Low
+`src/app/(home)/page.tsx` is ISR (`revalidate = 600`), so the open/closed badge
+can lag a schedule change or the opening time by up to ten minutes.
+**Fix direction:** compute the badge on the client, or shorten the revalidate
+window.
+
+### 31. The per-client hold cap keys on the platform IP; real rate limiting belongs at the edge — Medium
+`src/lib/actions/booking.ts` (`clientKey`). The open-hold cap hashes the
+platform-set address (`x-vercel-forwarded-for`) and is skipped entirely off
+Vercel. It bounds casual abuse but is not a rate limiter: shared NATs share a
+budget and a determined caller rotates addresses.
+**Fix direction:** Vercel Firewall rate limits and/or Turnstile on `createBooking`.
+
+### 32. The confirmation page promises an email that is never sent — Medium — _planned: P3_
+`src/app/(secure)/book/confirmation/[id]/page.tsx` says "A confirmation is on
+its way to ..." but no email is sent. Until one is, the copy must not promise it.
+
+### 33. No monitoring SDK is wired — Medium
+`src/instrumentation.ts` logs every server error as structured JSON through
+`onRequestError`, and `src/app/error.tsx` still only `console.error`s (see #8).
+The hook point exists; no Sentry (or similar) is connected, so nothing alerts.
+
+### 34. The e2e suite writes to the live database — Medium
+`tests/e2e` books and pays against whatever project the env points at, which
+today is the shared live one. **Fix direction:** a separate staging Supabase
+project (and Stripe test account) for e2e and previews.
+
+### 35. Legacy Supabase `anon` / `service_role` keys — Low
+Supabase is deprecating the legacy keys by the end of 2026. Migrating to the
+`sb_publishable_` / `sb_secret_` keys is a dashboard + Vercel env change and a
+rename in `src/lib/supabase/server.ts` (see [docs/supabase.md](docs/supabase.md)).
+
+### 36. No hold-expiry countdown or recovery UX on the pay step — Low — _planned: P3_
+A guest holding a slot is not told how long the hold lasts, and when it lapses
+or is lost the pay page gives little guidance. Related UX items (clearer
+failure/expired states, back-button error feedback from #17) are planned for P3.
+
+### 37. Date strip has no per-day fallback when the window lookup fails — Low
+`src/lib/slot-cache.ts` `loadWindow`. If `get_day_availability` fails, the old
+per-day `getAvailableSlots` fallback loop was removed (it queued server actions
+behind each other — non-negotiable 3). Days now stay "unknown" (not disabled),
+"Next available" times out, and only the viewed day loads (one call). Acceptable
+degraded mode; a real fix is making the range RPC reliable (migration applied).
+
+### 38. Dev server serves `no-cache` on the secure 404s — Low (dev only)
+`next dev` overrides `Cache-Control` on dynamic responses, so the pay /
+confirmation 404s show `no-cache, must-revalidate` locally even though
+`next.config.ts` `headers()` sets `no-store`. Verified on a production build
+(`next start`): both bogus-id 404s return `Cache-Control: no-store`. The 200
+path matches the same `source` patterns, so it gets the same header; not
+exercised with a real booking.
+
+### 39. TextField error text is not `role="alert"` — Low
+`aria-describedby` already reads the message when the field is focused, and the
+pay form moves focus to the first invalid field on submit, so adding `role="alert"`
+would announce it twice. Left as is; revisit if errors appear without a focus move.

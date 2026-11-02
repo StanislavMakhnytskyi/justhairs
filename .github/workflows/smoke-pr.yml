@@ -25,6 +25,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Test the PR's own head, not the merge ref, so the tests match the
+          # commit the Vercel preview was built from.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Check Supabase secrets are available
         run: |
@@ -62,15 +66,39 @@ jobs:
           echo "::error::Timed out waiting for the Vercel preview deployment"
           exit 1
 
+      - name: Warm up the preview and check its health
+        env:
+          URL: ${{ steps.preview.outputs.url }}
+        run: |
+          URL="${URL%/}"
+          for p in /book /services /api/health; do
+            curl -s -o /dev/null --retry 5 --retry-delay 5 --retry-all-errors --max-time 60 "$URL$p" || true
+          done
+          code=$(curl -s -o health.json -w '%{http_code}' --retry 3 --retry-delay 5 --retry-all-errors --max-time 60 "$URL/api/health" || echo 000)
+          echo "health: HTTP $code"
+          cat health.json 2>/dev/null || true
+          echo
+          if [ "$code" = "404" ] || [ "$code" = "000" ]; then
+            echo "::warning::/api/health not reachable (HTTP $code); continuing"
+            exit 0
+          fi
+          if ! grep -q '"database":"ok"' health.json; then
+            echo "::error::Preview /api/health reports the database is not ok. Check Vercel Preview env vars (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SITE_URL)."
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Run smoke tests
         env:
           PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.url }}
+          # TODO: set REQUIRE_MIGRATION_0007: "1" here once migrations 0007 and
+          # 0009 are applied to the live DB (enforces the anon-privilege tests
+          # in tests/smoke/rpcs.spec.ts).
         run: npx playwright test tests/smoke
 
       - if: always()
