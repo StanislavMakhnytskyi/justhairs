@@ -4,10 +4,13 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import { SALON } from "@/lib/salon";
 
+// The divIcon is inline HTML in the page, so it inherits the theme tokens.
+// `style` (not the `fill` attribute) because presentation attributes don't
+// resolve var().
 const PIN = `
-<svg width="30" height="38" viewBox="0 0 30 38" xmlns="http://www.w3.org/2000/svg">
-  <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 13.4 21.7 14 22.2a1.5 1.5 0 0 0 2 0C16.6 36.7 30 25.5 30 15 30 6.7 23.3 0 15 0Z" fill="#6440FE"/>
-  <circle cx="15" cy="15" r="5.5" fill="#fff"/>
+<svg width="30" height="38" viewBox="0 0 30 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 13.4 21.7 14 22.2a1.5 1.5 0 0 0 2 0C16.6 36.7 30 25.5 30 15 30 6.7 23.3 0 15 0Z" style="fill: var(--brand)"/>
+  <circle cx="15" cy="15" r="5.5" style="fill: var(--text-on-brand)"/>
 </svg>`;
 
 // Esri's grey canvas basemaps — clean, minimal, no API key.

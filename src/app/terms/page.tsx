@@ -5,7 +5,7 @@ import { Prose } from "@/components/ui/Prose";
 import { LEGAL_CONTACT } from "@/lib/salon";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — justhairs",
+  title: "Terms of Service",
   description: "Terms for using the justhairs demo.",
 };
 

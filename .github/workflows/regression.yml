@@ -1,8 +1,8 @@
 name: Regression tests
 
-# KNOWN ISSUE (CODE_REVIEW.md #21): there's still no lint/tsc/build gate on
-# pull requests. PRs get the smoke suite via smoke-pr.yml (against the Vercel
-# preview); this workflow covers production deploys.
+# Pull requests get lint/typecheck/build from ci.yml and the smoke suite via
+# smoke-pr.yml (against the Vercel preview); this workflow covers production
+# deploys.
 #
 # Fires from Vercel's GitHub integration posting a deployment status — not on
 # push — so this always tests the URL that actually finished deploying,
@@ -21,16 +21,24 @@ jobs:
     timeout-minutes: 10
     env:
       PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.target_url }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      # Only needed if the production deployment URL is behind Vercel Authentication.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # test the commit that was actually deployed
+          ref: ${{ github.event.deployment.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # TODO: once migrations 0007 and 0009 are applied to the live DB, add
+      # REQUIRE_MIGRATION_0007: "1" to this step's env so the anon-privilege
+      # assertions in tests/smoke/rpcs.spec.ts are enforced.
       - run: npx playwright test tests/smoke
       - if: always()
         uses: actions/upload-artifact@v4
@@ -49,14 +57,17 @@ jobs:
     timeout-minutes: 15
     env:
       PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.target_url }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium

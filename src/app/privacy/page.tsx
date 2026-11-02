@@ -5,7 +5,7 @@ import { Prose } from "@/components/ui/Prose";
 import { LEGAL_CONTACT } from "@/lib/salon";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — justhairs",
+  title: "Privacy Policy",
   description: "How the justhairs demo handles data.",
 };
 

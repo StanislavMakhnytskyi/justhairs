@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/Button";
  *  keeps the chosen service and stylist instead of dumping the visitor home. */
 export default function BookError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const params = useSearchParams();
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function BookError({
           Something broke while loading this step. Your choices are safe — try again, or start
           this step over.
         </p>
-        <Button onClick={reset}>Try again</Button>
+        <Button onClick={retry}>Try again</Button>
         <Button href={restart} variant="text">
           Start this step over
         </Button>

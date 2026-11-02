@@ -21,10 +21,14 @@ jobs:
     timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Test the PR's own head, not the merge ref, so the tests match the
+          # commit the Vercel preview was built from.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Check Supabase secrets are available
         run: |
@@ -62,15 +66,57 @@ jobs:
           echo "::error::Timed out waiting for the Vercel preview deployment"
           exit 1
 
+      - name: Warm up the preview and check its health
+        env:
+          URL: ${{ steps.preview.outputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          URL="${URL%/}"
+          # Vercel Protection Bypass for Automation: send the secret on every request.
+          bypass=()
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "::add-mask::$VERCEL_AUTOMATION_BYPASS_SECRET"
+            bypass=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "x-vercel-set-bypass-cookie: true")
+          fi
+          for p in /book /services /api/health; do
+            curl -s -o /dev/null "${bypass[@]}" --retry 5 --retry-delay 5 --retry-all-errors --max-time 60 "$URL$p" || true
+          done
+          code=$(curl -s -o health.json -w '%{http_code}' "${bypass[@]}" --retry 3 --retry-delay 5 --retry-all-errors --max-time 60 "$URL/api/health" || echo 000)
+          echo "health: HTTP $code"
+          cat health.json 2>/dev/null || true
+          echo
+          # Vercel Authentication wall: 401, or an HTML page instead of the JSON health body.
+          if [ "$code" = "401" ] || grep -qi 'Vercel Authentication' health.json 2>/dev/null || grep -qi '^[[:space:]]*<!doctype html\|^[[:space:]]*<html' health.json 2>/dev/null; then
+            if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+              echo "::error::The preview is protected by Vercel Authentication and rejected the VERCEL_AUTOMATION_BYPASS_SECRET (HTTP $code). Check the GitHub secret matches the secret under Vercel project > Settings > Deployment Protection > Protection Bypass for Automation."
+            else
+              echo "::error::The preview is protected by Vercel Authentication, so CI cannot reach it. Either (1) add the Protection Bypass for Automation secret: Vercel project > Settings > Deployment Protection > Protection Bypass for Automation, then copy it into the GitHub Actions secret VERCEL_AUTOMATION_BYPASS_SECRET; or (2) disable Vercel Authentication for Preview deployments."
+            fi
+            exit 1
+          fi
+          if [ "$code" = "404" ] || [ "$code" = "000" ]; then
+            echo "::warning::/api/health not reachable (HTTP $code); continuing"
+            exit 0
+          fi
+          if ! grep -q '"database":"ok"' health.json; then
+            echo "::error::Preview /api/health reports the database is not ok. Check Vercel Preview env vars (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SITE_URL)."
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Run smoke tests
         env:
           PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.url }}
+          # playwright.config.ts turns this into a host-scoped bypass cookie.
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          # TODO: set REQUIRE_MIGRATION_0007: "1" here once migrations 0007 and
+          # 0009 are applied to the live DB (enforces the anon-privilege tests
+          # in tests/smoke/rpcs.spec.ts).
         run: npx playwright test tests/smoke
 
       - if: always()

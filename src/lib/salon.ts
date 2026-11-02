@@ -4,6 +4,9 @@ export const SALON_TZ = "Europe/Dublin";
 export const SALON_OPEN_HOUR = 9; // 09:00 local
 export const SALON_CLOSE_HOUR = 18; // 18:00 local
 export const SLOT_STEP_MIN = 30; // display grid step
+/** How far ahead a slot can be booked, in days from today. Mirrors the window
+ *  enforced in SQL (migration 0006) and in `src/lib/actions/booking.ts`. */
+export const BOOKABLE_DAYS = 90;
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // Swap for a real contact address before sharing publicly.
@@ -46,21 +49,96 @@ export function dayTimeGrid(dayStr: string): number[] {
   return out;
 }
 
-/** The next `count` dates (yyyy-MM-dd) the salon is open, starting today. */
-export function nextOpenDates(openWeekdays: number[], count: number): string[] {
+/** The salon's calendar day (yyyy-MM-dd) at `now`, whatever the visitor's or server's zone. */
+export function salonDayString(now: Date = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: SALON_TZ });
+}
+
+/** Weekday (0 = Sunday) of a yyyy-MM-dd calendar day. Zone-independent. */
+export function weekdayOf(dayStr: string): number {
+  return new Date(`${dayStr}T00:00:00Z`).getUTCDay();
+}
+
+/** `dayStr` plus `n` calendar days (zone-independent, so DST never shifts it). */
+export function addDaysToDay(dayStr: string, n: number): string {
+  const d = new Date(`${dayStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * A yyyy-MM-dd calendar day as a Date whose *local* year/month/day match it
+ * (noon, so a DST gap at midnight can't shift it). For calendar widgets that
+ * read local fields (date-fns `format`, `getDay`). Never parses the string with
+ * the `Date` constructor, which would read it in the visitor's zone.
+ */
+export function parseDay(dayStr: string): Date {
+  const [y, m, d] = dayStr.split("-").map(Number);
+  return new Date(y, m - 1, d, 12);
+}
+
+/** `dayStr` if it is a real yyyy-MM-dd calendar day (2026-02-30 is not), else null. */
+export function validDay(dayStr: string | null | undefined): string | null {
+  if (!dayStr || !/^\d{4}-\d{2}-\d{2}$/.test(dayStr)) return null;
+  const d = parseDay(dayStr);
+  const back = `${String(d.getFullYear()).padStart(4, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return back === dayStr ? dayStr : null;
+}
+
+/** `time` if it parses as an ISO instant, else null. */
+export function validTime(time: string | null | undefined): string | null {
+  if (!time) return null;
+  return Number.isNaN(new Date(time).getTime()) ? null : time;
+}
+
+/** The salon's "today" as a calendar-widget Date (see `parseDay`). */
+export function salonToday(now: Date = new Date()): Date {
+  return parseDay(salonDayString(now));
+}
+
+/** The next `count` dates (yyyy-MM-dd) the salon is open, starting today (salon time). */
+export function nextOpenDates(
+  openWeekdays: number[],
+  count: number,
+  now: Date = new Date(),
+): string[] {
   const out: string[] = [];
-  const d = new Date();
+  const today = salonDayString(now);
   for (let i = 0; i < 30 && out.length < count; i++) {
-    if (openWeekdays.includes(d.getDay())) {
-      out.push(
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-          d.getDate(),
-        ).padStart(2, "0")}`,
-      );
-    }
-    d.setDate(d.getDate() + 1);
+    const day = addDaysToDay(today, i);
+    if (openWeekdays.includes(weekdayOf(day))) out.push(day);
   }
   return out;
+}
+
+/** "Open today 9:00–18:00" / "Closed today · open Tue–Sat", on the salon's clock. */
+export function openTodayLabel(
+  openWeekdays: number[],
+  now: Date = new Date(),
+): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: SALON_TZ,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const isOpenDay = openWeekdays.includes(weekdayOf(salonDayString(now)));
+  if (isOpenDay && hour < SALON_CLOSE_HOUR) {
+    return `Open today ${SALON_OPEN_HOUR}:00–${SALON_CLOSE_HOUR}:00`;
+  }
+  const days = [...new Set(openWeekdays)];
+  if (!days.length) return "Closed today";
+  if (isOpenDay) {
+    // After closing: name the next open day ("tomorrow" only if it is).
+    const today = salonDayString(now);
+    for (let i = 1; i <= 7; i++) {
+      const wd = weekdayOf(addDaysToDay(today, i));
+      if (days.includes(wd)) {
+        return `Closed for today · open again ${i === 1 ? "tomorrow" : WEEKDAY_LABELS[wd]}`;
+      }
+    }
+  }
+  return `Closed today · open ${contiguousLabel(days)}`;
 }
 
 /** "Tue–Sat 9:00–18:00" style summary from working-hour rows. */

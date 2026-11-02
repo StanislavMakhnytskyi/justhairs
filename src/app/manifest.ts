@@ -9,8 +9,11 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#6440fe",
+    // icon-192.png lives in /public (resized from src/app/icon.png);
+    // /icon.png and /apple-icon.png are served by the file-based icons.
     icons: [
-      { src: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+      { src: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { src: "/icon.png", type: "image/png", sizes: "512x512" },
       { src: "/apple-icon.png", type: "image/png", sizes: "180x180" },
     ],
   };

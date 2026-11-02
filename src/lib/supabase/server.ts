@@ -21,15 +21,15 @@ let adminClient: Client | undefined;
  * and RLS allow the `anon` role: read the public catalog, the staff and the
  * rating views. It cannot call the booking functions or touch appointments.
  *
- * Falls back to a placeholder so a build without env vars still compiles; the
- * callers check `isSupabaseConfigured` before querying.
+ * Callers check `isSupabaseConfigured` first (a build without env vars then
+ * renders the empty-catalog fallbacks); there is no placeholder client, so a
+ * missing variable in production fails loudly instead of querying a fake host.
  */
 export function createPublicClient(): Client {
-  return (publicClient ??= createClient<Database>(
-    URL || "https://placeholder.supabase.co",
-    ANON_KEY || "placeholder-anon-key",
-    options,
-  ));
+  if (!URL || !ANON_KEY) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.");
+  }
+  return (publicClient ??= createClient<Database>(URL, ANON_KEY, options));
 }
 
 /**

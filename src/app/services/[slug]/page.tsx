@@ -26,9 +26,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const service = await getServiceBySlug(slug);
-  if (!service) return { title: "Service not found — justhairs" };
+  if (!service) return { title: "Service not found", robots: { index: false } };
   return {
-    title: `${service.name} — ${formatPrice(service.price_cents)} — justhairs`,
+    title: `${service.name} — ${formatPrice(service.price_cents)}`,
+    alternates: { canonical: `/services/${service.slug}` },
     description: service.description ?? undefined,
     openGraph: service.photo_url ? { images: [service.photo_url] } : undefined,
   };
@@ -61,7 +62,7 @@ export default async function ServiceDetailPage({
 
   return (
     <BookShell>
-      <TopBar title={service.name} />
+      <TopBar title={service.name} titleAs="p" />
       <div className="flex-1">
         {service.photo_url && (
           <SmoothImage

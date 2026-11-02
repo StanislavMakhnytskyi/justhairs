@@ -25,12 +25,15 @@ export type Database = {
       appointments: {
         Row: {
           cancellation_reason: string | null;
+          checkout_attempt: number;
+          client_key: string | null;
           confirmation_code: string | null;
           created_at: string;
           customer_email: string | null;
           customer_name: string | null;
           customer_phone: string | null;
           ends_at: string;
+          hold_token: string;
           id: string;
           payment_status: string;
           price_cents: number;
@@ -38,16 +41,20 @@ export type Database = {
           staff_id: string | null;
           starts_at: string;
           status: Database["public"]["Enums"]["appointment_status"];
+          stripe_session_expires_at: string | null;
           stripe_session_id: string | null;
         };
         Insert: {
           cancellation_reason?: string | null;
+          checkout_attempt?: number;
+          client_key?: string | null;
           confirmation_code?: string | null;
           created_at?: string;
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
           ends_at: string;
+          hold_token?: string;
           id?: string;
           payment_status?: string;
           price_cents: number;
@@ -55,16 +62,20 @@ export type Database = {
           staff_id?: string | null;
           starts_at: string;
           status?: Database["public"]["Enums"]["appointment_status"];
+          stripe_session_expires_at?: string | null;
           stripe_session_id?: string | null;
         };
         Update: {
           cancellation_reason?: string | null;
+          checkout_attempt?: number;
+          client_key?: string | null;
           confirmation_code?: string | null;
           created_at?: string;
           customer_email?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
           ends_at?: string;
+          hold_token?: string;
           id?: string;
           payment_status?: string;
           price_cents?: number;
@@ -72,6 +83,7 @@ export type Database = {
           staff_id?: string | null;
           starts_at?: string;
           status?: Database["public"]["Enums"]["appointment_status"];
+          stripe_session_expires_at?: string | null;
           stripe_session_id?: string | null;
         };
         Relationships: [
@@ -333,9 +345,10 @@ export type Database = {
     };
     Functions: {
       book_appointment: {
-        Args: { p_service_id: string; p_staff_id: string | null; p_starts_at: string };
+        Args: { p_client_key?: string | null; p_service_id: string; p_staff_id: string | null; p_starts_at: string };
         Returns: Database["public"]["Tables"]["appointments"]["Row"];
       };
+      cancel_unpaid_booking: { Args: { p_appointment_id: string; p_hold_token: string }; Returns: string };
       complete_past_appointments: { Args: Record<PropertyKey, never>; Returns: number };
       gen_confirmation_code: { Args: Record<PropertyKey, never>; Returns: string };
       get_available_slots: {
@@ -346,6 +359,11 @@ export type Database = {
         Args: { p_days: number; p_from: string; p_service_id: string; p_staff_id: string | null };
         Returns: { staff_id: string; starts_at: string }[];
       };
+      record_payment: {
+        Args: { p_amount_total: number; p_appointment_id: string; p_session_id: string };
+        Returns: string;
+      };
+      release_checkout_session: { Args: { p_session_id: string }; Returns: number };
       release_stale_holds: { Args: Record<PropertyKey, never>; Returns: number };
     };
     Enums: {

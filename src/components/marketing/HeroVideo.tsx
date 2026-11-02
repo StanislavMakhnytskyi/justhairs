@@ -91,7 +91,7 @@ export function HeroVideo({ mp4, webm }: { mp4: string; webm: string }) {
         type="button"
         onClick={toggle}
         aria-label={paused ? "Play background video" : "Pause background video"}
-        className="absolute right-5 top-5 z-10 lg:bottom-12 lg:right-10 lg:top-auto grid size-9 place-items-center rounded-pill bg-black/30 text-white backdrop-blur-sm transition-colors duration-150 hover:bg-black/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="absolute right-4 top-4 z-10 lg:bottom-11 lg:right-9 lg:top-auto grid size-11 place-items-center rounded-pill bg-black/30 text-white backdrop-blur-sm transition-colors duration-150 hover:bg-black/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         {paused ? <Play size={16} aria-hidden /> : <Pause size={16} aria-hidden />}
       </button>

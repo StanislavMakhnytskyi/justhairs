@@ -88,7 +88,7 @@ export function HomeNav({ variant = "home" }: { variant?: "home" | "book" }) {
                   "rounded-pill px-3.5 py-2 text-label font-bold transition-colors duration-200 ease-[var(--ease-out)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
                   solid
                     ? on
-                      ? "bg-brand-subtle text-brand"
+                      ? "bg-brand-subtle text-link"
                       : "text-text-secondary hover:text-text-primary"
                     : on
                       ? "bg-white/20 text-white"

@@ -14,17 +14,21 @@ export const button = tv({
   variants: {
     variant: {
       primary: "bg-brand text-text-on-brand hover:bg-brand-hover active:bg-brand-press",
+      // Purple *text* is `text-link` (dark theme lightens it; --brand is the fill).
       outlined:
-        "border border-brand text-brand hover:bg-brand-subtle active:bg-brand-subtle",
-      text: "text-brand hover:bg-brand-subtle active:bg-brand-subtle",
+        "border border-brand text-link hover:bg-brand-subtle active:bg-brand-subtle",
+      text: "text-link hover:bg-brand-subtle active:bg-brand-subtle",
       white:
         "bg-surface-card text-text-primary shadow-[var(--shadow-sm)] hover:bg-surface-sunken active:bg-surface-sunken",
       success: "bg-success text-white hover:brightness-95 active:brightness-90",
     },
+    // lg and md meet the 44px target. sm is visually 32px for dense rows; an
+    // invisible ::after stretches its hit area to 44px (overflow stays visible
+    // for it via `overflow-visible`), so it is safe as a tap target too.
     size: {
       lg: "h-12 px-5 text-body",
-      md: "h-10 px-4 text-label",
-      sm: "h-8 px-3 text-caption",
+      md: "h-11 px-4 text-label",
+      sm: "h-8 px-3 text-caption overflow-visible after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
     },
     block: { true: "w-full" },
   },

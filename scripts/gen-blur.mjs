@@ -7,9 +7,6 @@
 // Re-run whenever the imagery changes. Output: src/lib/blur.generated.ts
 
 import { createClient } from "@supabase/supabase-js";
-// KNOWN ISSUE (CODE_REVIEW.md #22): sharp isn't declared in package.json at
-// all — this only resolves because Next pulls it in as its own transitive
-// dependency. Works today by accident; add it to devDependencies directly.
 import sharp from "sharp";
 import { writeFileSync } from "node:fs";
 

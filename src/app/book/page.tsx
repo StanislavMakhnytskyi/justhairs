@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { BookingFlow } from "./BookingFlow";
 import { BookingFlowSkeleton } from "./BookingFlowSkeleton";
 import { getCatalog } from "@/lib/queries";
+
+export const metadata: Metadata = {
+  title: "Book an appointment",
+  description: "Pick a service, a specialist and a time at justhairs.",
+  alternates: { canonical: "/book" },
+};
 
 export default async function BookPage() {
   const { services, staff, staffServices, workingHours } = await getCatalog();

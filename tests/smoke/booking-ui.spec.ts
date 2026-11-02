@@ -1,4 +1,16 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
+
+// Click the first service and wait for the next step. A service click is a
+// router.push (dynamic RSC round trip: slow on a cold preview), and the first
+// click can land before hydration, so retry — but idempotently: if the next
+// step is already showing, never click again.
+async function advanceFromServices(firstService: Locator, next: Locator) {
+  await expect(async () => {
+    if (await next.isVisible()) return;
+    await firstService.click({ timeout: 5_000 });
+    await expect(next).toBeVisible({ timeout: 8_000 });
+  }).toPass({ timeout: 40_000, intervals: [500, 1_000, 2_000] });
+}
 
 // Read-only UI smoke checks for the booking-critical paths. Nothing here
 // reaches "Confirm booking", so no appointment is created and no cleanup is
@@ -13,12 +25,7 @@ test.describe("booking UI", () => {
     const anySpecialist = page.getByRole("button", { name: "Any specialist" });
     const dateStrip = page.getByRole("radiogroup", { name: "Choose a date" });
 
-    // The first click after goto() can land before hydration attaches the
-    // handler, so retry until the next step actually appears.
-    await expect(async () => {
-      await firstService.click();
-      await expect(anySpecialist.or(dateStrip)).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 15_000 });
+    await advanceFromServices(firstService, anySpecialist.or(dateStrip));
 
     if (await anySpecialist.isVisible().catch(() => false)) {
       await anySpecialist.click();
@@ -51,10 +58,7 @@ test.describe("booking UI", () => {
     const dateStrip = page.getByRole("radiogroup", { name: "Choose a date" });
     const anySpecialist = page.getByRole("button", { name: "Any specialist" });
 
-    await expect(async () => {
-      await firstService.click();
-      await expect(anySpecialist.or(dateStrip)).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 15_000 });
+    await advanceFromServices(firstService, anySpecialist.or(dateStrip));
 
     // A single-stylist service skips this step; otherwise pick a named stylist
     // (the row right after "Any specialist").
@@ -90,9 +94,10 @@ test.describe("booking UI", () => {
 
     const women = page.getByRole("tab", { name: "Women" });
     await expect(async () => {
-      await women.click();
-      await expect(page).toHaveURL(/category=women/, { timeout: 2_000 });
-    }).toPass({ timeout: 15_000 });
+      if (/category=women/.test(page.url())) return;
+      await women.click({ timeout: 5_000 });
+      await expect(page).toHaveURL(/category=women/, { timeout: 8_000 });
+    }).toPass({ timeout: 40_000, intervals: [500, 1_000, 2_000] });
 
     await page.reload();
     await expect(page.getByRole("tab", { name: "Women" })).toHaveAttribute(

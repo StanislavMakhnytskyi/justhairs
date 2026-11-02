@@ -1,27 +1,75 @@
 "use client";
 
+import { useRef } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { segmentedTrack, segmentedItem, segmentedItemIdle } from "./segmented";
 
+/** Id of the tab for `value` in a `SegmentedTabs` with this `idPrefix` — for
+ *  the panel's `aria-labelledby`. */
+export function segmentedTabId(idPrefix: string, value: string): string {
+  return `${idPrefix}-tab-${value}`;
+}
+
+/**
+ * Segmented control with a sliding pill. Two semantics, same look:
+ *
+ * - `kind="tabs"` (needs `idPrefix` + `panelId`): the APG tabs pattern — each
+ *   tab `aria-controls` the one panel the caller renders with
+ *   `role="tabpanel" id={panelId} aria-labelledby={segmentedTabId(...)}`.
+ * - `kind="radio"` (needs `label`): a radiogroup, for a setting that doesn't
+ *   swap a panel (e.g. the theme).
+ *
+ * Either way it is one tab stop; Left/Right (and Home/End) move and select.
+ */
 export function SegmentedTabs<T extends string>({
   tabs,
   value,
   onChange,
   className,
+  ...semantics
 }: {
   tabs: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
   className?: string;
-}) {
+} & (
+  | { kind: "tabs"; idPrefix: string; panelId: string }
+  | { kind: "radio"; label: string }
+)) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const index = Math.max(
     0,
     tabs.findIndex((t) => t.value === value),
   );
   const n = tabs.length;
+  const isTabs = semantics.kind === "tabs";
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    const last = n - 1;
+    const next =
+      e.key === "ArrowRight" || (!isTabs && e.key === "ArrowDown")
+        ? (index + 1) % n
+        : e.key === "ArrowLeft" || (!isTabs && e.key === "ArrowUp")
+          ? (index - 1 + n) % n
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? last
+              : null;
+    if (next === null) return;
+    e.preventDefault();
+    onChange(tabs[next].value);
+    refs.current[next]?.focus();
+  }
+
   return (
-    <div role="tablist" className={cn(segmentedTrack, "relative", className)}>
+    <div
+      role={isTabs ? "tablist" : "radiogroup"}
+      aria-label={semantics.kind === "radio" ? semantics.label : undefined}
+      onKeyDown={onKeyDown}
+      className={cn(segmentedTrack, "relative", className)}
+    >
       {/* Sliding pill: same width as one tab (track padding p-1, gap-1), moved
           by whole tab-widths + gaps so it glides instead of jumping. */}
       <span
@@ -32,11 +80,22 @@ export function SegmentedTabs<T extends string>({
           transform: `translateX(calc(${index} * (100% + 0.25rem)))`,
         }}
       />
-      {tabs.map((t) => (
+      {tabs.map((t, i) => (
         <button
           key={t.value}
-          role="tab"
-          aria-selected={value === t.value}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          type="button"
+          tabIndex={i === index ? 0 : -1}
+          {...(semantics.kind === "tabs"
+            ? {
+                role: "tab",
+                id: segmentedTabId(semantics.idPrefix, t.value),
+                "aria-selected": value === t.value,
+                "aria-controls": semantics.panelId,
+              }
+            : { role: "radio", "aria-checked": value === t.value })}
           onClick={() => onChange(t.value)}
           className={cn(
             segmentedItem,
@@ -77,7 +136,9 @@ export function StepTabs({
               className={cn(
                 "relative z-10 mx-auto grid size-7 place-items-center rounded-full text-caption font-bold ring-4 ring-surface-card transition-colors duration-200 ease-[var(--ease-out)]",
                 done && "bg-brand text-text-on-brand",
-                active && "bg-[var(--neutral-900)] text-white",
+                // Ink disc: near-black in light, white in dark — never brand,
+                // so the current step stays distinct from the done (brand) ones.
+                active && "bg-ink text-text-on-ink",
                 !done &&
                   !active &&
                   "border-2 border-dashed border-border-strong bg-surface-card text-text-tertiary",
