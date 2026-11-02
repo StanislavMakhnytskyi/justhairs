@@ -176,6 +176,14 @@ export function BookingFlow({
   // Never show a step whose inputs are missing (e.g. ?step=review with no time).
   const step: number = Math.min(rawStep, inferredStep);
 
+  // The step body fades in when you move between steps, never on first load:
+  // there it would start at opacity 0 the instant the loading skeleton is
+  // replaced, which reads as a blink. `hasMoved` keeps later returns to the
+  // first step animated too.
+  const [firstStep] = useState(step);
+  const [hasMoved, setHasMoved] = useState(false);
+  const animateBody = hasMoved || step !== firstStep;
+
   const setParams = useCallback(
     (patch: Record<string, string | null>, opts?: { push?: boolean }) => {
       const next = new URLSearchParams(params.toString());
@@ -360,6 +368,7 @@ export function BookingFlow({
   useEffect(() => {
     if (lastStep.current === step) return;
     lastStep.current = step;
+    setHasMoved(true);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [step]);
@@ -431,7 +440,9 @@ export function BookingFlow({
 
       <div
         key={step}
-        className="flex flex-1 flex-col px-gutter pb-6 pt-3 motion-safe:animate-fade-in-up"
+        className={`flex flex-1 flex-col px-gutter pb-6 pt-3 ${
+          animateBody ? "motion-safe:animate-fade-in-up" : ""
+        }`}
       >
         {step === 0 && (
           <div className="flex flex-col">

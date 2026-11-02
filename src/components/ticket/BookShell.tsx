@@ -6,7 +6,9 @@ import { cn } from "@/lib/cn";
 /**
  * Frame for every booking-side page: the home page's appointment card, one
  * screen at a time. A brand band with a paper card on it; the card "prints in"
- * on arrival. Header, body and stub are the card's children — see TopBar,
+ * in place — no entrance animation on the card itself: the loading skeleton and
+ * the real content both render this shell, and a swap must look like nothing
+ * happened. Header, body and stub are the card's children — see TopBar,
  * StickyBar (the stub) and the `.cut` perforation in globals.css.
  *
  * From lg the floating nav pill sits above it, and an optional `aside` (the
@@ -42,7 +44,7 @@ export function BookShell({
         )}
         <div
           className={cn(
-            "flex min-h-[calc(100dvh-1.5rem)] w-full max-w-[34rem] flex-col bg-surface-card text-text-primary motion-safe:animate-print sm:min-h-[calc(100dvh-10rem)] lg:min-h-[calc(100dvh-8rem)]",
+            "flex min-h-[calc(100dvh-1.5rem)] w-full max-w-[34rem] flex-col bg-surface-card text-text-primary sm:min-h-[calc(100dvh-10rem)] lg:min-h-[calc(100dvh-8rem)]",
             aside && "lg:max-w-none lg:flex-1",
             className,
           )}
