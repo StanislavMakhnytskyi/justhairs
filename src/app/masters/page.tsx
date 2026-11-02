@@ -9,7 +9,8 @@ import { buildMasters } from "@/lib/masters";
 import { getRatingsMap } from "@/lib/reviews";
 
 export const metadata: Metadata = {
-  title: "Our team — justhairs",
+  title: "Our team",
+  alternates: { canonical: "/masters" },
   description: "Meet the stylists and barbers at justhairs.",
 };
 

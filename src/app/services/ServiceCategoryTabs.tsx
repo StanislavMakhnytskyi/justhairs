@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useId, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
+import { SegmentedTabs, segmentedTabId } from "@/components/ui/SegmentedTabs";
 import { ShopService } from "@/components/ui/ShopService";
 import { TextLink } from "@/components/ui/TextLink";
 import { EmptyState } from "@/components/ui/primitives";
@@ -23,6 +23,8 @@ export function ServiceCategoryTabs({
   staffServices: { staff_id: string; service_id: string }[];
 }) {
   const params = useSearchParams();
+  const tabsId = useId();
+  const panelId = `${tabsId}-panel`;
   const pathname = usePathname();
   const router = useRouter();
 
@@ -75,6 +77,9 @@ export function ServiceCategoryTabs({
       )}
 
       <SegmentedTabs
+        kind="tabs"
+        idPrefix={tabsId}
+        panelId={panelId}
         value={tab}
         onChange={setTab}
         tabs={[
@@ -82,30 +87,38 @@ export function ServiceCategoryTabs({
           { value: "women", label: "Women" },
         ]}
       />
-      {shown.length === 0 ? (
-        <EmptyState
-          title={activeStaff ? `${activeStaff.name} doesn't offer this yet` : "No services to show yet"}
-          description={activeStaff ? "Try the other tab, or clear the filter above." : undefined}
-        />
-      ) : (
-        <div className="flex flex-col">
-          {shown.map((s) => (
-            <ShopService
-              key={s.id}
-              href={
-                activeStaff
-                  ? `/services/${s.slug}?staff=${activeStaff.id}`
-                  : `/services/${s.slug}`
-              }
-              name={s.name}
-              priceCents={s.price_cents}
-              durationMin={s.duration_min}
-              description={s.description}
-              photoUrl={s.photo_url}
-            />
-          ))}
-        </div>
-      )}
+      <div
+        role="tabpanel"
+        id={panelId}
+        aria-labelledby={segmentedTabId(tabsId, tab)}
+      >
+        {shown.length === 0 ? (
+          <EmptyState
+            title={
+              activeStaff ? `${activeStaff.name} doesn't offer this yet` : "No services to show yet"
+            }
+            description={activeStaff ? "Try the other tab, or clear the filter above." : undefined}
+          />
+        ) : (
+          <div className="flex flex-col">
+            {shown.map((s) => (
+              <ShopService
+                key={s.id}
+                href={
+                  activeStaff
+                    ? `/services/${s.slug}?staff=${activeStaff.id}`
+                    : `/services/${s.slug}`
+                }
+                name={s.name}
+                priceCents={s.price_cents}
+                durationMin={s.duration_min}
+                description={s.description}
+                photoUrl={s.photo_url}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

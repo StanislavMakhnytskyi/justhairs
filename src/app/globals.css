@@ -20,6 +20,9 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-text-on-brand: var(--text-on-brand);
+  --color-ink: var(--ink);
+  --color-text-on-ink: var(--text-on-ink);
+  --color-focus-halo: var(--focus-halo);
 
   --color-success: var(--success);
   --color-error: var(--error);

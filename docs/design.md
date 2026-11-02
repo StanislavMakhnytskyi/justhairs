@@ -57,16 +57,49 @@ Named steps only — `text-hero 56 / display 32 / title 23 / heading 18 / subhea
 
 Use semantic tokens: `surface-app / card / sunken`, `text-primary / secondary / tertiary`, `border-default / strong`, `brand*`. Dark theme flips via `[data-theme="dark"]`; paper stays `surface-card`. Photo tiles pin dark text (`--neutral-900`) so they read identically in both themes. Glass surfaces (`backdrop-blur` + translucent fill) must keep text ≥ 4.5:1 — add a dark tint under white text on video.
 
+**Purple text is `text-link`, purple fills are `bg-brand`.** In dark theme one purple can't do both (a fill under white text needs relative luminance ≤ 0.18; text on the dark card needs ≥ 0.26), so `--brand` is the fill and `--link` is the purple used as copy (Button `text`/`outlined`, the `brand` Badge, the active nav pill, links). In light theme they are the same colour. `text-brand` is only for purple on white (`Logo` on the band). `border-default` is for decoration (dotted leaders, dividers); `border-strong` is for edges that identify a control (inputs, date/slot cells, the off Switch).
+
+**Ink** (`bg-ink text-text-on-ink`) is the text colour used as a solid fill — near-black in light, white in dark. The current `StepTabs` marker uses it so it stays distinct from the done (brand) steps and never sinks into the dark card; don't use raw `--neutral-900` for a fill that sits on a theme surface.
+
+**Map pin** (`LeafletMap`): the Leaflet `divIcon` is inline SVG in the page, so it is filled with `style="fill: var(--brand)"` / `var(--text-on-brand)` and follows the theme. Use `style`, not the `fill` attribute — presentation attributes don't resolve `var()`.
+
+### Contrast (WCAG 2.x, computed from the hex values)
+
+| Pair | Light | Dark |
+| --- | --- | --- |
+| `error` text on card / sunken | `#c62828`: 5.62 / 5.03 | `#ff6b6b`: 5.52 on card |
+| `success` text on card / sunken | `#047a47`: 5.41 / 4.84 | `#05a660`: 4.84 on card, 5.32 on app |
+| `warning` text on card / sunken | `#b35300`: 5.06 / 4.52 | `#f0903c`: 6.39 on card |
+| `border-strong` on card / sunken (needs 3:1) | `#858799`: 3.55 / 3.17 | `#7a7a8c`: 3.64 / 4.27 |
+| white on `brand` fill | `#6440fe`: 5.67 | `#6e56f2`: 4.91 (hover `#5b40e8` 6.28, press `#4b2ee0` 7.59) |
+| `brand` as focus ring on card (3:1) | 5.67 | 3.12 |
+| `link` text on card / app / brand-subtle | 5.67 / 5.67 / 4.98 | `#a68bff`: 5.66 / 6.23 / 5.58 |
+| `ink` disc on card (current step marker, 3:1) / `text-on-ink` on it | `#1c1c28`: 16.85 / 16.85 | `#ffffff`: 15.33 / 15.33 (was `#1c1c28` on `#242430`: 1.10) |
+| `focus-halo` (white) around a brand ring, on the band | 5.67 | 4.91 |
+
+Before this pass: error 4.29, success 3.17, warning 4.04 on white; `border-strong` 1.64 (light) / 1.62 (dark); dark brand `#7b61ff` 4.20 under white and 3.65 as text. Re-run the numbers when a token changes (any WCAG contrast calculator; the formula is the relative-luminance ratio). The `success` Button variant (white on `bg-success`) still fails in dark (3.17) — it is unused; fix it before using it.
+
 ## Interaction & a11y
 
-- Targets ≥ 44px (back button, slot cells). Visible focus ring everywhere (`focus-visible:outline-2 outline-brand`).
-- Booking semantics are load-bearing for tests: `radiogroup`/`radio` for dates and times (`Choose a date`, `Choose a time`), `Back`, `Back to <step>` buttons, `aria-current="step"`, `Any specialist`, `Confirm booking`.
+- Targets ≥ 44px (back button, slot cells, hero pause button `size-11`). `Button` `lg` is 48px and `md` 44px; `sm` is 32px visually with an invisible `::after` stretching the hit area to 44px. Visible focus ring everywhere (`focus-visible:outline-2 outline-brand`).
+- **Skip link + `#main`**: the root layout's first tab stop is "Skip to content" (`#main`). `BookShell` puts `id="main"` on the card (past the nav), `AppShell`/`HomeShell` on `<main>`; all `tabIndex={-1}`. A new shell must carry it too. The link can appear over the brand band (phones), where a brand outline alone is invisible, so its focus ring is brand inside a white `focus-halo` ring (`box-shadow: 0 0 0 6px var(--focus-halo)` under the 2px offset outline). Do the same for any focusable that can sit on the band.
+- **One `h1` per page.** `TopBar`'s title is the `h1` unless the page has its own — then `titleAs="p"` (service detail).
+- `SummaryList` is a `dl` (each `SummaryRow` a `div > dt + dd`); a lone `SummaryRow` (TicketPanel) renders spans. Avatars are decorative (`alt=""`, initials `aria-hidden`) because the name is always printed beside them.
+- `Spinner` spins only under `motion-safe`; the button carrying it has `aria-busy`.
+- Errors: inline `role="alert"` text in `text-error`. A server action that *rejects* (network) shows "We couldn't reach the salon. Check your connection and try again." — never a silently dead button.
+- Booking semantics are load-bearing for tests: `radiogroup`/`radio` for dates and times (`Choose a date`, `Choose a time`), `Back`, `Back to <step>` buttons, `aria-current="step"`, `Any specialist`, `Confirm booking`. Pay/confirmation copy the e2e specs read: `Pay … now`, `pay after the service`, "You're booked", "Confirmation code", "Pay after your visit", "Paid in full".
+
+## Pay and confirmation pages
+
+- **Pay** (`/book/pay/[id]`): `TopBar` "Almost done" → hold notice (sunken strip with a clock: "holding this time until HH:MM · about n min left"; 30 min after the hold for a sessionless hold, the Checkout session's expiry once one exists) → summary → `.cut` → guest form. Fields carry `name`, `autoComplete`, `aria-required`, and the same limits as the server's `contactSchema`; a per-booking draft lives in `sessionStorage`. The "use card 4242…" line shows when `NEXT_PUBLIC_DEMO` is `1`/`true`, hides on `0`/`false`, and when unset shows everywhere except a production build.
+- **Confirmation** (`/book/confirmation/[id]`, `ConfirmationCard`): the heading follows the payment state — paid / pay-at-salon: "You're booked"; back from Stripe but unsettled: "Confirming your payment…" with *Check payment status* (refresh) and no pay button; unpaid: "Almost there — payment not completed" with *Complete payment*. Booked cards offer *Add to calendar* (an `.ics` from `…/calendar`: UTC times, service + address only, no guest data) and get the stamp. Every state shows "Finding us" (address, `OpenInMaps`, the contact email — there is no salon phone; add a `tel:` only when `salon.ts` has one) and the change/cancel line. The code lives in the tear-off stub with *Copy code* and *Print*. No promise of an email — none is sent.
+- **Not found** (`(secure)/not-found.tsx`): "This booking is no longer held" + *Book again*. It is a real 404 — never add a `loading.tsx` above these pages. Next serves it as its minimal error document rendered on the client, so the inline theme script doesn't run; `ApplyTheme` re-applies the stored theme. `(secure)/error.tsx` is the same card with *Try again* / *Start a new booking*.
 - Selectable rows are printed lines (dotted rule, tint when selected + brand check) — no boxed cards in lists.
 - Decorative bits (`.cut`, dotted leaders, perforation) are `aria-hidden`.
 
 ## Checklist for a design review
 
-1. Same vocabulary on home *and* every booking step (band, paper, cut, stub, eyebrows).
+1. Same vocabulary on home *and* every booking step (band, paper, cut, stub, eyebrows). **Intentional exception:** the content/reading pages `/masters`, `/privacy` and `/terms` use the flat `AppShell` (theme surface, no band) — they are long-form reading, and the band would add colour behind every paragraph. Don't flag them for missing the band, and don't move them onto it.
 2. 390 / 768 / 1024 / 1440 / 1920, light + dark, reduced motion — nothing hidden, no overlap (check hero chips vs pause button, nav vs content).
 3. Type scale + tokens only; no raw px/hex.
 4. Motion present on load and on scroll, but only under `motion-safe`.

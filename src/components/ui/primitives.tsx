@@ -48,7 +48,7 @@ export function Badge({
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
     error: "bg-error/10 text-error",
-    brand: "bg-brand-subtle text-brand",
+    brand: "bg-brand-subtle text-link",
   };
   return (
     <span
@@ -80,6 +80,8 @@ export function RatingBadge({
   );
 }
 
+/** Decorative: every caller prints the name beside it, so the photo is
+ *  alt="" and the initials are aria-hidden (no name read twice). */
 export function Avatar({
   name,
   src,
@@ -93,7 +95,7 @@ export function Avatar({
     return (
       <SmoothImage
         src={src}
-        alt={name}
+        alt=""
         width={size}
         height={size}
         sizes={`${size}px`}
@@ -111,6 +113,7 @@ export function Avatar({
     .toUpperCase();
   return (
     <span
+      aria-hidden
       className="flex shrink-0 items-center justify-center rounded-full bg-purple-100 font-bold text-purple-600"
       style={{ width: size, height: size, fontSize: size * 0.34 }}
     >

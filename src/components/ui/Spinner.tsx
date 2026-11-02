@@ -1,6 +1,8 @@
 import { cn } from "@/lib/cn";
 
-/** Inline activity indicator. Inherits `currentColor`. */
+/** Inline activity indicator. Inherits `currentColor`. Spins only under
+ *  `motion-safe`; with reduced motion it is a still arc (the owning control
+ *  carries `aria-busy`, so the state never depends on the movement). */
 export function Spinner({
   size = 16,
   className,
@@ -14,7 +16,7 @@ export function Spinner({
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("shrink-0 animate-spin", className)}
+      className={cn("shrink-0 motion-safe:animate-spin", className)}
       aria-hidden
     >
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />

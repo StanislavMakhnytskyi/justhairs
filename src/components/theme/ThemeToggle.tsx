@@ -21,6 +21,8 @@ export function ThemeToggle() {
     <div className="flex flex-col gap-1.5">
       <span className="text-label font-bold text-text-primary">Appearance</span>
       <SegmentedTabs
+        kind="radio"
+        label="Appearance"
         value={theme}
         onChange={(t) => {
           setTheme(t);

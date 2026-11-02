@@ -42,9 +42,12 @@ export function BookShell({
         {aside && (
           <div className="sticky top-24 hidden w-[24rem] shrink-0 lg:block">{aside}</div>
         )}
+        {/* The skip link's target (layout.tsx): the card itself, past the nav. */}
         <div
+          id="main"
+          tabIndex={-1}
           className={cn(
-            "flex min-h-[calc(100dvh-1.5rem)] w-full max-w-[34rem] flex-col bg-surface-card text-text-primary sm:min-h-[calc(100dvh-10rem)] lg:min-h-[calc(100dvh-8rem)]",
+            "flex min-h-[calc(100dvh-1.5rem)] outline-none w-full max-w-[34rem] flex-col bg-surface-card text-text-primary sm:min-h-[calc(100dvh-10rem)] lg:min-h-[calc(100dvh-8rem)]",
             aside && "lg:max-w-none lg:flex-1",
             className,
           )}

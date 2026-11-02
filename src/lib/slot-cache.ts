@@ -15,6 +15,14 @@ function salonDay(iso: string): string {
 const map = new Map<string, string[]>();
 const listeners = new Set<() => void>();
 
+/** Bumped by `invalidateDay`, per service+day. A fetch remembers the epoch it
+ *  started in and drops its result if it moved, so a stale in-flight response
+ *  can't repopulate a day that was just cleared. */
+const epochs = new Map<string, number>();
+function epochOf(serviceId: string, day: string): number {
+  return epochs.get(`${serviceId}:${day}`) ?? 0;
+}
+
 export function slotCacheKey(
   serviceId: string,
   staffId: string | null,
@@ -32,6 +40,23 @@ export function subscribeSlotCache(cb: () => void): () => void {
   return () => {
     listeners.delete(cb);
   };
+}
+
+/**
+ * Forget every cached lookup for one service on one day (any staff, including
+ * "any") — e.g. after the booking RPC reports the slot was just taken, so the
+ * next read re-fetches what is really still open.
+ */
+export function invalidateDay(serviceId: string, day: string): void {
+  epochs.set(`${serviceId}:${day}`, epochOf(serviceId, day) + 1);
+  let changed = false;
+  for (const key of map.keys()) {
+    if (key.startsWith(`${serviceId}:`) && key.endsWith(`:${day}`)) {
+      map.delete(key);
+      changed = true;
+    }
+  }
+  if (changed) listeners.forEach((l) => l());
 }
 
 /**
@@ -55,6 +80,7 @@ export async function loadWindow(
     (d) => !map.has(slotCacheKey(serviceId, staffId, d)),
   );
   if (missing.length === 0) return;
+  const epochs = new Map(missing.map((d) => [d, epochOf(serviceId, d)]));
 
   try {
     const all = await getDayAvailability({
@@ -85,24 +111,17 @@ export async function loadWindow(
     for (const d of missing) {
       const key = slotCacheKey(serviceId, staffId, d);
       if (map.has(key)) continue;
+      // invalidateDay ran while this response was in flight: it is stale.
+      if (epochOf(serviceId, d) !== epochs.get(d)) continue;
       map.set(key, byDay.get(d) ?? []);
     }
     listeners.forEach((l) => l());
   } catch {
-    // The range RPC may not be deployed yet — fall back to per-day lookups for
-    // the nearest days so day-disabling and the "next available" chips still work.
-    for (const d of missing.slice(0, 8)) {
-      const key = slotCacheKey(serviceId, staffId, d);
-      if (map.has(key)) continue;
-      try {
-        const slots = await getAvailableSlots({ serviceId, staffId: sid, day: d });
-        if (map.has(key)) continue;
-        map.set(key, slots);
-        listeners.forEach((l) => l());
-      } catch {
-        /* leave this day unknown */
-      }
-    }
+    // The window lookup failed. Deliberately NO per-day fallback loop: Next
+    // serialises server actions, so a loop would queue behind itself and block
+    // the viewed day's own lookup. Days stay unknown (the strip leaves them
+    // enabled, "Next available" times out) and the viewed day loads via
+    // `loadSlots`, one call.
   }
 }
 
@@ -115,11 +134,27 @@ export async function loadSlots(
   const key = slotCacheKey(serviceId, staffId, day);
   const hit = map.get(key);
   if (hit) return hit;
+  const epoch = epochOf(serviceId, day);
   const result = await getAvailableSlots({
     serviceId,
     staffId: staffId === "any" ? null : staffId,
     day,
   });
+  // A response that predates an invalidateDay must not repopulate the day.
+  // Hand the caller a fresh lookup instead (one retry, one call).
+  if (epochOf(serviceId, day) !== epoch) {
+    return getAvailableSlots({
+      serviceId,
+      staffId: staffId === "any" ? null : staffId,
+      day,
+    }).then((fresh) => {
+      if (!map.has(key)) {
+        map.set(key, fresh);
+        listeners.forEach((l) => l());
+      }
+      return fresh;
+    });
+  }
   map.set(key, result);
   listeners.forEach((l) => l());
   return result;

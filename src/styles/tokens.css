@@ -31,10 +31,12 @@
   --black: #000000;
   --white: #ffffff;
 
-  /* semantic */
-  --success: #05a660;
-  --error: #e53535;
-  --warning: #cc5f00;
+  /* semantic — status colours double as text, so each clears 4.5:1 on
+     --surface-card and --surface-sunken (ratios in docs/design.md). The DS
+     originals (#05a660 / #e53535 / #cc5f00) were 3.2 / 4.3 / 4.0 on white. */
+  --success: #047a47;
+  --error: #c62828;
+  --warning: #b35300;
   --rating: #f8d247;
   --info-blue: #03a9f4;
   --accent-peach: #eaa895;
@@ -83,7 +85,9 @@
      intentionally visible (#e4e4eb was ~1:1 on white). Containers get elevation
      (shadow) or, for selectable controls, --border-strong. */
   --border-default: #d7d8e0;
-  --border-strong: var(--neutral-300);
+  /* Input outlines and selectable-control edges: >= 3:1 (WCAG 1.4.11) on
+     card (3.55) and sunken (3.17). neutral-300 was 1.6:1. */
+  --border-strong: #858799;
   --text-primary: var(--neutral-900);
   /* Darker than the DS neutral-500/600 so muted copy clears WCAG AA (4.5:1)
      on both --surface-app (#fff) and --surface-sunken (#f2f2f5). The cool
@@ -96,6 +100,15 @@
   --brand-press: var(--purple-700);
   --brand-subtle: var(--purple-50);
   --link: var(--purple-500);
+  /* Solid "ink" fill = the text colour used as a disc (the current booking
+     step). It flips with the theme so it never sinks into the card:
+     light #1c1c28 on #fff 16.85:1; dark #fff on #242430 15.33:1. */
+  --ink: var(--text-primary);
+  --text-on-ink: var(--surface-card);
+  /* Outer halo behind a brand focus ring, for focusables that can sit on the
+     brand band (where a brand outline alone vanishes). White on brand 5.67
+     (light) / 4.91 (dark); on a white page the brand ring carries it. */
+  --focus-halo: var(--white);
 }
 
 [data-theme="dark"] {
@@ -104,14 +117,23 @@
   --surface-sunken: #161620;
   --surface-card: #242430;
   --border-default: #33333f;
-  --border-strong: #454552;
+  --border-strong: #7a7a8c;
   --text-primary: var(--neutral-0);
   --text-secondary: var(--neutral-300);
   --text-tertiary: var(--neutral-500);
   --text-on-brand: var(--white);
-  --brand: var(--purple-400);
-  --brand-hover: var(--purple-300);
-  --brand-press: var(--purple-200);
+  /* One purple cannot be both a fill under white text (needs L <= 0.18) and
+     text on the dark card (needs L >= 0.26), so dark splits the roles:
+     --brand is the fill (white on it 4.91; still 3.1:1 as a focus ring on the
+     card), hover/press go darker so white stays readable, and --link is the
+     purple used *as text* (5.66 on card). Use `text-link`, not `text-brand`,
+     for purple copy on a theme surface. */
+  --brand: #6e56f2;
+  --brand-hover: #5b40e8;
+  --brand-press: #4b2ee0;
   --brand-subtle: #2a2140;
-  --link: var(--purple-400);
+  --link: var(--purple-300);
+  --success: #05a660;
+  --error: #ff6b6b;
+  --warning: #f0903c;
 }
