@@ -27,7 +27,7 @@ test.describe("guest booking — pay after the service", () => {
 
     await expect(page).toHaveURL(/\/book\/confirmation\/[0-9a-f-]{36}/);
     await expect(page.getByRole("heading", { name: /you.re booked/i })).toBeVisible();
-    await expect(page.getByText(/Confirmation code/i)).toBeVisible();
+    await expect(page.getByText("Confirmation code", { exact: true })).toBeVisible();
     await expect(page.getByText(/Pay after your visit/i)).toBeVisible();
   });
 });
