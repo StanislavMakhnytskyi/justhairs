@@ -127,6 +127,14 @@ jobs:
           # in tests/smoke/rpcs.spec.ts).
         run: npx playwright test tests/smoke
 
+      # Read-only walk through the booking flow (never confirms a booking):
+      # fails on page errors, console errors and the error boundary.
+      - name: Run booking-flow check
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: npm run check:flow -- --base "$PLAYWRIGHT_BASE_URL"
+
       - if: always()
         uses: actions/upload-artifact@v7
         with:
