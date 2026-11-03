@@ -196,8 +196,13 @@ export function BookingFlow({
     if (s.length === 0) s.push(currentUrl);
     else if (s[s.length - 1] === currentUrl) return;
     else if (pendingPush.current === currentUrl) s.push(currentUrl);
-    else if (s.length > 1 && s[s.length - 2] === currentUrl) s.pop();
-    else s[s.length - 1] = currentUrl;
+    else {
+      // Landing on an earlier entry (one or several Backs) drops everything
+      // above it; anything unannounced rewrites the top.
+      const at = s.lastIndexOf(currentUrl);
+      if (at >= 0) s.length = at + 1;
+      else s[s.length - 1] = currentUrl;
+    }
     pendingPush.current = null;
   }, [currentUrl]);
 
@@ -463,26 +468,49 @@ export function BookingFlow({
   // want, go back to it (so hardware Forward still works and nothing is
   // duplicated); otherwise — a deep link, or arriving from another page —
   // replace this entry with the previous step instead of stacking a new one.
+  //
+  // Everything here is read from the live address bar, never from the render's
+  // closure: after a Back the browser updates the URL before React commits the
+  // new search params and before the history mirror catches up, so a quick
+  // second click would otherwise act on a stale step and stack.
   function goBack() {
-    if (step === 0) {
+    const live = new URLSearchParams(window.location.search);
+    const livePath = window.location.pathname;
+    const liveUrl = `${livePath}?${live.toString()}`;
+    const liveService = services.find((s) => s.slug === live.get("service")) ?? null;
+    const liveInferred = !liveService
+      ? 0
+      : !live.get("staff")
+        ? 1
+        : !validTime(live.get("time"))
+          ? 2
+          : 3;
+    const liveNamed = STEP_PARAM.indexOf(live.get("step") ?? "");
+    const liveStep = Math.min(liveNamed >= 0 ? liveNamed : liveInferred, liveInferred);
+    if (liveStep === 0) {
       router.push("/");
       return;
     }
     // A single-stylist service skips the specialist step on the way in, so
     // skip it on the way out too (it would bounce straight forward again).
-    let target = step - 1;
-    if (target === 1 && eligibleStaff.length === 1) target = 0;
+    let target = liveStep - 1;
+    if (target === 1 && liveService) {
+      const eligible = staffServices.filter((l) => l.service_id === liveService.id).length;
+      if (eligible === 1) target = 0;
+    }
     const s = historyStack.current;
-    const prev = s.length > 1 ? s[s.length - 2] : null;
-    if (prev && prev.split("?")[0] === pathname && stepOfUrl(prev) === target) {
+    const at = s.lastIndexOf(liveUrl);
+    const prev = at > 0 ? s[at - 1] : null;
+    if (prev && prev.split("?")[0] === livePath && stepOfUrl(prev) === target) {
       router.back();
       return;
     }
-    const patch: Record<string, string | null> = { step: STEP_PARAM[target] };
-    if (target < 3) patch.time = null;
-    if (target < 2) patch.date = null;
-    if (target < 1) patch.staff = null;
-    setParams(patch);
+    const next = new URLSearchParams(live.toString());
+    next.set("step", STEP_PARAM[target]);
+    if (target < 3) next.delete("time");
+    if (target < 2) next.delete("date");
+    if (target < 1) next.delete("staff");
+    router.replace(`${livePath}?${next.toString()}`);
   }
 
   function confirm() {

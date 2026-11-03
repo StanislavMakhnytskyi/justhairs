@@ -98,6 +98,10 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     baseURL,
+    // A stalled click or navigation fails loudly instead of eating the whole
+    // 60s test budget.
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     ...(bypassState ? { storageState: bypassState } : {}),
     trace: "on-first-retry",
     screenshot: "only-on-failure",
