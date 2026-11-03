@@ -56,7 +56,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.target_url }}
+      # Stripe sends the browser back to NEXT_PUBLIC_SITE_URL, not to the
+      # per-deployment URL. The HttpOnly hold-token cookie is origin-bound, so
+      # the test must book on that same canonical origin or the confirmation
+      # page 404s. Override with the NEXT_PUBLIC_SITE_URL repo variable.
+      PLAYWRIGHT_BASE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://justhairs.vercel.app' }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -69,6 +73,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Require the service-role key
+        # Without it the tests' cleanup can't delete the appointments they
+        # create, so they'd leak rows into the live DB and collide on retry.
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY repo secret is not set; e2e needs it to clean up its appointments."
+            exit 1
+          fi
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e
