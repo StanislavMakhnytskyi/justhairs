@@ -25,20 +25,31 @@ test.describe("booking flow — step navigation", () => {
     await expect(page).toHaveURL(/step=review/);
 
     const back = page.getByRole("button", { name: "Back", exact: true });
+    // The focused step heading is rendered only once React has committed the
+    // step, so it (not just the address bar) says the navigation has settled.
+    const stepHeading = (n: number) =>
+      page.getByRole("heading", { name: new RegExp(`^Step ${n} of 4`) });
 
-    await back.click();
-    await expect(page).not.toHaveURL(/step=review/);
-    // Confirms this genuinely stepped back rather than jumping straight home.
-    expect(new URL(page.url()).pathname).toBe("/book");
-
-    // Keep stepping back until home, waiting for each URL change to actually
-    // land before clicking again — clicking back-to-back with no wait can
-    // fire the second click while the first navigation is still in flight.
-    for (let i = 0; i < 5 && new URL(page.url()).pathname !== "/"; i++) {
+    // Back from Review, then each step in turn. A single-stylist service has
+    // no specialist step, so the steps visited are not fixed: after each click
+    // wait for the URL to change AND for a heading of an earlier step to be
+    // committed, so the next click never races a navigation in flight.
+    let current = 4;
+    for (let i = 0; i < 6 && new URL(page.url()).pathname !== "/"; i++) {
+      await expect(stepHeading(current)).toBeAttached();
+      await expect(back).toBeVisible();
       const before = page.url();
-      if (!(await back.isVisible().catch(() => false))) break;
       await back.click();
       await expect(page).not.toHaveURL(before);
+      if (new URL(page.url()).pathname === "/") break;
+      await expect(stepHeading(current)).toHaveCount(0);
+      const earlier = Array.from({ length: current - 1 }, (_, k) => k + 1);
+      const heading = page.getByRole("heading", { name: /^Step \d of 4/ });
+      await expect(heading).toHaveText(
+        new RegExp(`^Step (${earlier.join("|")}) of 4`),
+      );
+      const text = (await heading.textContent()) ?? "";
+      current = Number(/^Step (\d)/.exec(text)?.[1]);
     }
 
     await expect(page).toHaveURL(/\/$/);
