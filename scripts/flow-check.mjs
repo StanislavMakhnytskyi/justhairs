@@ -72,10 +72,29 @@ async function toDateStep(p, named) {
 
 async function toReview(p, named) {
   await toDateStep(p, named);
-  await dateStrip(p).getByRole("radio", { disabled: false }).first().click();
-  await timeGrid(p).or(p.getByText(/Fully booked on/i)).waitFor({ state: "visible", timeout: 8000 });
+  // An unfetched day is enabled until its slots load empty, then flips to disabled
+  // mid-click. Re-query with a short per-attempt timeout instead of one 45s click.
+  const outcome = timeGrid(p).or(p.getByText(/Fully booked on/i));
+  let picked = false;
+  for (let i = 0; i < 5 && !picked; i++) {
+    try {
+      await dateStrip(p).getByRole("radio", { disabled: false }).nth(i).click({ timeout: 3000 });
+      await outcome.waitFor({ state: "visible", timeout: 8000 });
+      picked = true;
+    } catch {
+      /* day went full or re-rendered: try the next enabled day */
+    }
+  }
+  if (!picked) throw new Error("no bookable day found in the first 5 enabled dates");
   if (await timeGrid(p).isVisible()) {
-    await timeGrid(p).getByRole("radio", { disabled: false }).first().click();
+    for (let i = 0; ; i++) {
+      try {
+        await timeGrid(p).getByRole("radio", { disabled: false }).first().click({ timeout: 3000 });
+        break;
+      } catch (e) {
+        if (i >= 2) throw e;
+      }
+    }
     // Reaching the button is the check; it is deliberately never clicked.
     await p.getByRole("button", { name: "Confirm booking" }).waitFor({ state: "visible", timeout: 5000 });
   }
