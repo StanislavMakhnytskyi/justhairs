@@ -1,23 +1,65 @@
 # justhairs
 
-Guest booking flow for a unisex hair salon: pick a service and a stylist, choose a
-slot, and either pay by card (Stripe Checkout, test mode) or pay at the salon. No
-accounts.
+Online booking for a unisex hair salon: pick a service and a specialist, choose a
+free slot and confirm in under a minute, paying by card (Stripe test mode) or at the
+salon. No account needed.
 
-**Live demo:** [justhairs.vercel.app](https://justhairs.vercel.app) ·
-**Stack:** Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind v4,
-Supabase (Postgres + RLS), Stripe, Playwright
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)](https://www.typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e)](https://supabase.com)
+[![Stripe test mode](https://img.shields.io/badge/Stripe-test%20mode-635bff)](https://stripe.com/docs/test-mode)
 
-## Scope
+**Live demo: [justhairs.vercel.app](https://justhairs.vercel.app)**
 
-| In | Out (schema exists where noted) |
-| --- | --- |
-| Catalog, team, ratings, map, dark mode | Accounts / login (removed in migration `0003`) |
-| 4-step booking: service → specialist → date & time → review | Admin panel (tables exist) |
-| Guest details, Stripe Checkout (test mode) or pay-later | Email / SMS notifications (tables exist) |
-| Confirmation page with reference code | Self-service reschedule / cancel |
+![justhairs home page: hero with a booking card, address and opening hours](docs/img/home.png)
 
-## Architecture
+> **Demo status.** Payments run in Stripe **test mode** (no real money moves; use
+> Stripe's test card). The demo shares one Supabase database with the automated tests,
+> so bookings made there are demo data.
+
+## What it does
+
+- Service catalog with prices and durations: 11 services for men and women.
+- Team page with 7 specialists, their services, working hours and ratings; customer reviews on the home page.
+- 4-step booking: service, specialist, date and time, review. Availability is live, and "any specialist" assigns a free person at booking time.
+- Guest checkout with no account: pay by card through Stripe Checkout (test mode) or pay at the salon.
+- Confirmation page with a reference code and an add-to-calendar file (.ics).
+- Map, opening hours and an "open today" indicator.
+- Dark mode, reduced-motion support and an installable web app manifest.
+- SEO basics: sitemap, robots, Open Graph image and structured data.
+
+## Why it is reliable
+
+- **No double-booking.** A Postgres exclusion constraint on each specialist's time range rejects overlapping appointments, so two people racing for the same slot cannot both win.
+- **Payments are confirmed twice.** A signature-verified Stripe webhook records the payment, and the confirmation page also verifies the session when the guest returns.
+- **Booking links are private.** Each booking carries a secret token held in an HttpOnly cookie, so a leaked appointment link cannot be used to view or change someone else's booking.
+- **Inputs are validated on the server** (Zod) for every action, and the booking functions can only be called by the server, never directly with the public key.
+- **Row-level security is on for every table**, and guest contact details are not readable with the public key.
+
+## Quality you can see
+
+About 130 automated tests across four layers, plus a CI gate on every pull request.
+
+| Layer | What it covers | Size |
+| --- | --- | --- |
+| Unit (`tests/unit`) | Stripe webhook handling, calendar file, opening-hours label, salon time zone | about 37 tests, 4 files |
+| Database (`tests/db`) | Every migration and the seed on in-memory Postgres: grants and RLS, booking rules, payments, upgrade path, generated types | about 48 tests, 4 files |
+| Smoke (`tests/smoke`) | Routes, access rules, booking UI, layout invariants, an axe accessibility scan in light and dark; also run on a phone-sized viewport | about 30 tests, 5 files |
+| End to end (`tests/e2e`) | Real bookings through the UI, including a Stripe test-mode payment | about 13 tests, 4 files |
+
+On every pull request, GitHub Actions runs: generated-SQL freshness check, database tests, unit tests, lint, type check and a production build ([`ci.yml`](.github/workflows/ci.yml)); and the smoke suite against that PR's Vercel preview ([`smoke-pr.yml`](.github/workflows/smoke-pr.yml)). A third workflow runs smoke and end-to-end tests after production deploys ([`regression.yml`](.github/workflows/regression.yml)).
+
+## Screenshots
+
+| Date and time | Review | On a phone |
+| --- | --- | --- |
+| ![Booking step 3: day strip with next available times](docs/img/booking-date.png) | ![Booking step 4: review of service, specialist, time and total](docs/img/booking-review.png) | ![Booking on a 390 px wide screen with open times for a chosen day](docs/img/mobile-booking.png) |
+
+Photos are free stock from Pexels; credits are in [`public/ds/CREDITS.md`](public/ds/CREDITS.md).
+
+## How it is built
+
+Next.js 16 (App Router, React 19), TypeScript in strict mode, Tailwind CSS v4, Supabase (Postgres with row-level security) and Stripe Checkout, deployed on Vercel.
 
 ```mermaid
 flowchart TB
@@ -28,201 +70,70 @@ flowchart TB
     P[Static pages<br/>ISR]
     A[Server actions<br/>Zod-validated]
     C[Pay + confirmation<br/>dynamic]
+    W[Stripe webhook<br/>signature-verified]
   end
 
   subgraph X[External services]
     direction LR
-    D[(Supabase Postgres<br/>RLS + RPCs)]
+    D[(Supabase Postgres<br/>RLS + server-only RPCs)]
     S[Stripe Checkout<br/>test mode]
   end
 
   B -->|HTML| P
   B -->|book, pay| A
-  B -.->|anon RPC| D
   A -->|service role| D
+  C -->|service role| D
   A -->|create session| S
   S <-->|redirect, verify| C
+  S -->|signed events| W
+  W -->|service role| D
 
   classDef client fill:#ede9fe,stroke:#6d28d9,color:#1e1b4b
   classDef app fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
   classDef ext fill:#dcfce7,stroke:#15803d,color:#14532d
   class B client
-  class P,A,C app
+  class P,A,C,W app
   class D,S ext
 ```
 
-- The anon key can only call the availability RPCs; appointment rows (contact details) are read server-side with the service-role key.
-- No webhook: after payment, Stripe redirects to the confirmation page, which verifies the session and marks the appointment paid.
+Key design decisions:
 
-Public pages are prerendered and revalidated (ISR). Only `/book/pay/[id]` and
-`/book/confirmation/[id]` are dynamic, because they read one live appointment.
-Availability and booking run in `SECURITY DEFINER` Postgres functions; appointment
-rows contain contact details and are never readable with the anon key.
+- **The booking is described by the URL** (`?service&staff&date&time&step`), so steps can be deep-linked and Back/Forward work.
+- **Rules live in Postgres.** Slot generation, the booking itself and payment recording are database functions, so there is one source of truth and the double-booking guard is enforced by the database.
+- **Public pages are prerendered** and revalidated; only the pay and confirmation pages, which read one live appointment, are dynamic.
+- **The browser-visible key reaches only the public catalog.** Everything private goes through the server with the service-role key.
+- **Design tokens and a small component library** keep spacing, elevation and type consistent ([`docs/design.md`](docs/design.md)).
 
-## Key design decisions
+More detail: [`docs/development.md`](docs/development.md) (scripts, layout, testing, booking engine) and [`docs/supabase.md`](docs/supabase.md) (access model, migrations, webhook).
 
-| Decision | Why | Tradeoff |
-| --- | --- | --- |
-| Booking state lives in the URL (`?service&staff&date&time&step`) | Deep links, working Back/Forward, clickable step tabs; `goToStep` clears dependent params | Every transition is a navigation; URL and component state must be kept in sync (see `BookingFlow.tsx`) |
-| Availability + booking as Postgres RPCs | One source of truth for slot generation, shared by UI and server | Logic lives in SQL migrations, not TypeScript |
-| Client slot cache on `useSyncExternalStore`, 14-day prefetch via `get_day_availability` | Date and time steps render from cache; "Next available" chips need no extra round trip | Hand-rolled cache; the grid is guarded so it never shows data for a different (day, staff) than the selection |
-| Stripe reconcile-on-return, no webhook | Runs on any hosting tier, no endpoint to register | A guest who pays and never returns to the site is not reconciled (see limitations) |
-| Guest checkout | Fewer steps to a booking | No ownership model for an appointment beyond its id |
-| Zod on every action input, `z.guid()` for ids | Validation at the trust boundary | `z.uuid()` rejects the non-RFC-4122 ids used in seed data |
-| Design tokens + Tailwind v4 `@theme` + `tailwind-variants` | One spacing scale (`--gutter`), one elevation language, pages compose rather than style | Local component library to maintain (`src/components/ui`) |
+## Run it locally
 
-Accessibility measures in code: contrast-tuned text tokens, `radiogroup`/`radio`
-semantics for the date strip and time grid, a single `focus-visible` ring,
-`prefers-reduced-motion` handling for scroll and transitions. There is no
-automated accessibility audit in CI yet.
-
-## Quality gates
-
-- `npx tsc --noEmit` and `eslint --max-warnings 0` (includes the React Compiler
-  lint rules) are expected clean on every commit.
-- Playwright regression suite against a **deployed** URL, never localhost — see
-  [Regression testing](#regression-testing).
-
-## Getting started
-
-Prerequisites: Node.js 20+, a Supabase project, optionally a Stripe test account.
+Prerequisites: Node.js 22.18 or newer, a Supabase project, optionally a Stripe test-mode account.
 
 ```bash
 npm install
 cp .env.example .env.local   # then fill in the values below
+npm run dev
 ```
 
 | Variable | Required | Scope | Purpose |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | client + server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | client + server | Anon key (RLS-protected) |
-| `SUPABASE_SERVICE_ROLE_KEY` | yes | server only | Reads appointments; test cleanup |
-| `STRIPE_SECRET_KEY` | no | server only | `sk_test_…`; without it only "pay later" works |
-| `NEXT_PUBLIC_SITE_URL` | yes | client + server | Stripe return URL (`http://localhost:3000` locally) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | client + server | Public key (RLS-protected catalog reads only) |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes | server only | Booking functions, appointments, payments |
+| `NEXT_PUBLIC_SITE_URL` | yes | client + server | Stripe return URL (`http://localhost:3000` locally; required in production) |
+| `STRIPE_SECRET_KEY` | no | server only | `sk_test_...`; without it only "pay at the salon" works |
+| `STRIPE_WEBHOOK_SECRET` | no | server only | Signing secret of the webhook endpoint; without it the route answers 503 |
+| `NEXT_PUBLIC_HERO_VIDEO` | no | client | Set to `1` to play the hero background video |
 | `TEST_PROD_URL`, `TEST_PREVIEW_URL` | tests only | Playwright | Deployment under test |
 
-Set up the database: enable the `pg_cron` extension (Supabase → Database → Extensions),
-then paste [`supabase/setup.sql`](supabase/setup.sql) into the SQL editor and run it. It is
-the whole schema, booking RPCs, cron jobs and the demo salon in one file.
+Database: enable the `pg_cron` extension (Supabase, Database, Extensions), then paste [`supabase/setup.sql`](supabase/setup.sql) into the SQL editor and run it. It contains the whole schema, the booking functions, the cron jobs and the demo salon. For an existing project, apply only the newer files in `supabase/migrations/`. Deployment: import the repo in Vercel and add the variables above; for payments, register the webhook endpoint `/api/stripe/webhook` as described in [`docs/supabase.md`](docs/supabase.md).
 
-Already have a project? `supabase/setup.sql` is for a fresh database only — apply just the newer
-files in `supabase/migrations/` (or `supabase db push`). `setup.sql` is generated from the
-migrations + `seed.sql` by `npm run db:setup`, and CI checks it is up to date.
+## Roadmap
 
-```bash
-npm run dev
-```
+Next steps for taking this from a demo to a production salon:
 
-### Scripts
-
-| Command | What it does |
-| --- | --- |
-| `npm run dev` / `build` / `start` | Next.js dev server / production build / serve build |
-| `npm run lint` | ESLint |
-| `npm run test:db` | Run every migration + the seed on an in-memory Postgres (PGlite) and test grants/RLS, functions, indexes, the booking engine and `database.types.ts` — no live project |
-| `npm run db:setup` | Regenerate `supabase/setup.sql` from the migrations + seed (`db:setup:check` verifies it) |
-| `npm run test:smoke` | Route + RPC checks against `TEST_PROD_URL` |
-| `npm run test:e2e` | Full booking flows, incl. Stripe test payment |
-| `npm run test:smoke:preview`, `test:e2e:preview` | Same, against `TEST_PREVIEW_URL` |
-| `npm run playwright:install` | Install Chromium for Playwright |
-| `node --env-file=.env.local scripts/seed-demo.mjs` | Demo visits, reviews, reservations (tagged `*@justhairs.test`, idempotent) |
-| `node --env-file=.env.local scripts/sync-catalog.mjs` | Push catalog changes to a live DB |
-| `node --env-file=.env.local scripts/gen-blur.mjs` | Regenerate `src/lib/blur.generated.ts` (commit the result) |
-
-Optional: regenerate DB types with
-`npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.gen.ts`.
-The app currently uses hand-authored types in `src/lib/supabase/types.ts`.
-
-## Deployment
-
-Import the repo in Vercel, add every variable from `.env.example`, and set
-`NEXT_PUBLIC_SITE_URL` to the deployed URL. There is no webhook to register.
-
-## Regression testing
-
-Playwright against the real deployed site: a fast smoke suite and a slower
-end-to-end suite that books and pays (Stripe **test mode**) for real.
-
-```bash
-npm run playwright:install   # once
-npm run test:smoke           # seconds: routes respond, RPCs callable
-npm run test:e2e             # 1–2 min: book, pay, confirm, clean up
-```
-
-- **`tests/smoke/`** — HTTP checks plus a direct anon-key call to
-  `get_available_slots` / `get_day_availability`. Asserts that
-  `/book/pay/<bogus-id>` and `/book/confirmation/<bogus-id>` currently return
-  HTTP **200** with "Page not found" (a known bug,
-  [`CODE_REVIEW.md` #19](./CODE_REVIEW.md)); asserted as-is so it cannot get worse unnoticed.
-- **`tests/e2e/`** — real Chromium through the UI: catalog, pay-later booking,
-  pay-now with Stripe's `4242…` test card, and step-tab / back-button navigation.
-  The Stripe test drives hosted Checkout and skips itself if the deployment has no
-  `STRIPE_SECRET_KEY`.
-- Every test that creates an appointment deletes exactly that row afterwards
-  (`tests/support/cleanup.ts`, service-role key), pass or fail.
-- **CI:** `.github/workflows/smoke-pr.yml` runs the smoke suite as a pull-request
-  check (job `smoke`) against that PR's Vercel preview, waiting for the deployment
-  to go green first. `.github/workflows/regression.yml` runs on the `deployment_status`
-  event Vercel posts for production deploys: smoke plus e2e. Secrets: `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Failed runs upload
-  the HTML report (trace + screenshot).
-
-## Project layout
-
-```
-src/
-  app/
-    page.tsx                     Home
-    services/                    List + detail (static / ISR); ?staff= filters by stylist
-    masters/                     Team (static / ISR)
-    book/                        4-step flow (BookingFlow.tsx)
-    book/pay/[id]/               Guest details + Stripe Checkout / pay-later
-    book/confirmation/[id]/      Reference code + status (reconciles the Stripe session)
-  components/
-    ui/                          Design-system components
-    layout/ marketing/ theme/    App shell, hero/footer/map, theme toggle
-  lib/
-    supabase/                    anon + service-role clients, domain types
-    actions/booking.ts           Zod-validated server actions (book, pay, checkout)
-    slot-cache.ts                useSyncExternalStore availability cache
-    queries.ts, appointments.ts  Catalog reads; appointment read + Stripe reconcile
-    stripe.ts                    Stripe client (null without a key)
-supabase/
-  migrations/                    Ordered history, 0001–0008 (upgrade path for an existing project)
-  setup.sql                      Generated one-shot bundle: all migrations + seed (fresh install)
-  seed.sql                       Demo salon, services, staff, hours
-scripts/                         seed-demo, sync-catalog, gen-blur, build-setup-sql
-tests/                           smoke/, e2e/, support/
-CODE_REVIEW.md                   Self-review: 27 tracked findings
-docs/supabase.md                 How this project uses Supabase: access model, keys, functions, migrations, tests
-```
-
-## Booking engine
-
-`get_available_slots(service_id, staff_id, day)` and `book_appointment(...)` are
-`SECURITY DEFINER` functions callable by the anon role. Slots come from each
-staff member's `staff_working_hours` for the weekday, minus `staff_time_off` and
-existing appointments, stepped by `app_settings.slot_step_min`. "Any specialist"
-collapses to distinct times and a concrete stylist is assigned at booking.
-`book_appointment` re-checks availability inside its transaction and stamps a short
-confirmation code. Under Postgres's default isolation level that check is not
-serialized, so two concurrent bookings of the same slot can both succeed — see
-limitation 1 below. Contact details and payment are collected on the next screen;
-after a card payment the confirmation page verifies the Checkout session and sets
-`payment_status` to `paid`.
-
-## Known limitations
-
-Tracked in full, with fix directions, in [`CODE_REVIEW.md`](./CODE_REVIEW.md).
-The ones that matter most:
-
-1. **No database-level double-booking guard** — needs a `GiST` exclusion constraint
-   or row lock (#1).
-2. **Appointment mutations trust a bare id** — `abandonBooking`, `payLater`,
-   `startCheckout` have no ownership check; `abandonBooking` can race a payment (#2, #3).
-3. **No Stripe webhook** — a paid session is only reconciled if the guest returns.
-4. **`notFound()` responds 200** on the two dynamic booking routes (#19).
-5. **No PR-level CI gate** (lint / typecheck / build) and **no unit tests** — coverage
-   is live-site e2e only (#21, #23).
-
-Roadmap: exclusion constraint + hold tokens, Stripe webhook, notifications, admin panel.
+- Admin panel for staff, services and the calendar.
+- Email and SMS confirmations and reminders.
+- Self-service reschedule and cancel for guests.
+- Live Stripe keys, and a separate staging database for automated tests.
