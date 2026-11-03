@@ -26,7 +26,7 @@ Tokens live in `src/styles/tokens.css` (colour, shadow, radius, spacing) and `sr
 - **Desktop (≥1024px)**:
   - `HomeNav` — floating frosted pill (`fixed top-4`), condenses to a solid-ish pill after the hero, scroll-spy highlights the section. `variant="book"` swaps the section links for Home/Services/Team.
   - Home = inset rounded hero (`lg:m-4 rounded-tile`), then rounded tiles 16px apart on a `surface-sunken` page: services (purple tile + photo + scalloped sheet), team (bento: 2×2 feature + singles + 2-wide CTA), reviews (purple tile, loose slips at different heights), visit (map tile + Hours / Find us / Book tiles), reply card, back-of-card footer.
-  - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. Other booking pages keep one centred card (40rem).
+  - `/book` = `BookShell` with the `TicketPanel` (live "Your ticket") on the left and the step card on the right. **One width source** (`FRAME` in `BookShell.tsx`): a 62rem wrapper = 24rem left column + 2rem gap + a card of at most 36rem (`min-w-0`, so a wide child such as `DateStrip` scrolls inside the card instead of stretching it). Pages without a ticket (pay, confirmation, services, errors) render no left column: the single card is centred (`lg:mx-auto`) at the same width — at most 36rem and never more than the wrapper minus the 26rem column + gap (`FRAME.cardAlone`), so the card width is identical on every booking screen, including where the wrapper is squeezed below 62rem (1024px). Below `lg` the card is one centred sheet of at most 34rem.
 - Anchors need `scroll-mt-24` (the nav floats).
 
 ## Photography
