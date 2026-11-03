@@ -40,3 +40,35 @@ export async function clickUntil(locator, until, attempts = 4) {
     }
   }
 }
+
+/** Vercel "Protection Bypass for Automation": trade VERCEL_AUTOMATION_BYPASS_SECRET
+ *  for the host-scoped `_vercel_jwt` cookie and return it as a Playwright
+ *  storageState (undefined when no secret is set or the deployment isn't
+ *  protected). A cookie, not a header, so the secret never reaches third parties.
+ *  Same approach as playwright.config.ts. */
+export async function bypassStorageState(base) {
+  const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (!secret) return undefined;
+  const origin = new URL(base);
+  const res = await fetch(origin.origin + "/", {
+    redirect: "manual",
+    headers: { "x-vercel-protection-bypass": secret, "x-vercel-set-bypass-cookie": "true" },
+  });
+  const jwt = res.headers.getSetCookie().find((c) => c.startsWith("_vercel_jwt="));
+  if (!jwt) return undefined;
+  return {
+    cookies: [
+      {
+        name: "_vercel_jwt",
+        value: jwt.split(";")[0].slice("_vercel_jwt=".length),
+        domain: origin.hostname,
+        path: "/",
+        expires: -1,
+        httpOnly: true,
+        secure: origin.protocol === "https:",
+        sameSite: "Lax",
+      },
+    ],
+    origins: [],
+  };
+}

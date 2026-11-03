@@ -7,21 +7,30 @@
 // Fails (exit 1) on any uncaught page error, console error, or the error
 // boundary's headings ("Something went wrong" / "That didn't go through").
 import { chromium } from "@playwright/test";
-import { baseUrl, clickUntil, parseArgs } from "./_pw.mjs";
+import { baseUrl, bypassStorageState, clickUntil, parseArgs } from "./_pw.mjs";
 
 const base = baseUrl(parseArgs());
 const FORBIDDEN = /confirm booking|pay |pay$|complete payment/i;
+const storageState = await bypassStorageState(base);
 const browser = await chromium.launch();
 const results = [];
 
 async function scenario(name, fn) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    ...(storageState ? { storageState } : {}),
+  });
   // A cold dev server compiles each route on first hit; don't call that a failure.
   ctx.setDefaultTimeout(45_000);
   const page = await ctx.newPage();
   const problems = [];
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message.slice(0, 200)}`));
   page.on("console", (m) => {
+    // next.config.ts ships a Report-Only CSP that includes upgrade-insecure-requests;
+    // Chromium logs that this directive is ignored in report-only mode. Benign, and
+    // present on every page, so it must not fail the check. Real CSP violations
+    // ("[Report Only] Refused to ...") are still reported.
+    if (/upgrade-insecure-requests.*ignored when delivered in a report-only/i.test(m.text())) return;
     if (m.type() === "error") problems.push(`console: ${m.text().slice(0, 200)}`);
   });
   try {
