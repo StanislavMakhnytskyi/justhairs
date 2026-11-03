@@ -92,7 +92,7 @@ export function TeamTiles({ masters }: { masters: Master[] }) {
                 className="group relative flex h-full min-h-48 w-full flex-col justify-end rounded-2xl bg-brand p-5 text-white transition-transform duration-150 ease-[var(--ease-out)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand lg:p-7 [@media(hover:hover)]:motion-safe:hover:-translate-y-1"
               >
                 <span className="text-heading">Not sure who to pick?</span>
-                <span className="mt-2 max-w-[34ch] text-label opacity-90">
+                <span className="mt-2 max-w-[34ch] text-label">
                   Choose any specialist and we&rsquo;ll book the first stylist who is free.
                 </span>
                 <span className="mt-4 text-label font-bold underline underline-offset-4">
