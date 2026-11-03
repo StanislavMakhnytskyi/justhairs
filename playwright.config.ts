@@ -107,5 +107,12 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    // Phone emulation (390px wide) for the read-only smoke suite only. tests/e2e
+    // (live bookings) stays on the desktop project above.
+    {
+      name: "mobile",
+      testMatch: "**/smoke/**/*.spec.ts",
+      use: { ...devices["Pixel 7"] },
+    },
   ],
 });
